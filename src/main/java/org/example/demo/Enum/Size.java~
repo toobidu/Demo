@@ -1,4 +1,6 @@
 package org.example.demo.Enum;
 
-public enum OrderStatus {
+public enum Size {
+    S,
+    M,
 }

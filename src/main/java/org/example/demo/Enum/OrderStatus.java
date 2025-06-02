@@ -1,0 +1,10 @@
+package org.example.demo.Enum;
+
+public enum OrderStatus {
+    PENDING_PAYMENT,
+    ORDER,
+    PROCESSING,
+    SHIPPING,
+    DONE,
+    CANCELLED
+}
