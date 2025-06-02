@@ -1,0 +1,8 @@
+package org.example.demo.Config;
+
+public record ApiResponse<T>(String message, T data, boolean success) {
+
+    public static <T> ApiResponse<T> success(T data) {
+        return new ApiResponse<>("Success", data, true);
+    }
+}

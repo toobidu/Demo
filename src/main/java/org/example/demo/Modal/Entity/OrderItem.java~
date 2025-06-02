@@ -1,0 +1,40 @@
+package org.example.demo.Modal.Entity;
+
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import org.example.demo.Enum.SizeItem;
+
+import java.math.BigDecimal;
+
+@Table(name = "order_items")
+@Entity
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@FieldDefaults(level = lombok.AccessLevel.PRIVATE)
+public class OrderItem {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    Long id;
+
+    @ManyToOne
+    @JoinColumn(name = "order_id", nullable = false)
+    Order order;
+
+    @ManyToOne
+    @JoinColumn(name = "product_id", nullable = false)
+    Product product;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "size", nullable = false)
+    SizeItem size;
+
+    @Column(name = "quantity", nullable = false)
+    Integer quantity;
+
+    @Column(name = "price", nullable = false, precision = 12, scale = 2)
+    BigDecimal price;
+}
