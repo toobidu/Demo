@@ -1,4 +1,4 @@
-package org.example.demo.Modal.Entity;
+package org.example.demo.Modal.Entity.Products;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -23,7 +23,11 @@ public class ProductPrice {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     Long id;
-    
+
+    @ManyToOne
+    @JoinColumn(name = "product_id", nullable = false)
+    Product product;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "rank",nullable = false)
     Rank rank;

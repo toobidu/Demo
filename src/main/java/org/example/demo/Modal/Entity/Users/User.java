@@ -1,14 +1,15 @@
-package org.example.demo.Modal.Entity;
+package org.example.demo.Modal.Entity.Users;
 
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.example.demo.Enum.Rank;
 import org.example.demo.Enum.TypeAccount;
+import org.example.demo.Modal.Entity.Finance.Wallet;
 import org.hibernate.annotations.CreationTimestamp;
-
 import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Table(name = "users")
@@ -65,5 +66,5 @@ public class User {
     Set<RefreshToken> refreshTokens = new HashSet<>();
 
     @OneToMany(mappedBy = "user")
-    List<UserRole> userRoles = new HashSet<>();
+    Set<UserRole> userRoles = new HashSet<>();
 }

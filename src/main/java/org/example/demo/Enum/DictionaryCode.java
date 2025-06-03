@@ -1,0 +1,7 @@
+package org.example.demo.Enum;
+
+public enum DictionaryCode {
+    ORDER_STATUS,
+    RANK,
+    SIZE
+}

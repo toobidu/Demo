@@ -1,38 +1,36 @@
-package org.example.demo.Modal.Entity;
+package org.example.demo.Modal.Entity.Dictionary;
 
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.example.demo.Enum.Rank;
+import org.example.demo.Enum.DictionaryCode;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-@Table(name = "product_prices")
+@Table(name = "dictionaries")
 @Entity
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@FieldDefaults(level = lombok.AccessLevel.PRIVATE)
-public class ProductPrice {
+@FieldDefaults(level = AccessLevel.PRIVATE)
+public class Dictionary {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
     Long id;
-    
-    @Enumerated(EnumType.STRING)
-    @Column(name = "rank",nullable = false)
-    Rank rank;
 
-    @Column(name = "type", nullable = false)
-    String type;
+    @Column(name = "code", nullable = false)
+    DictionaryCode code;
 
-    @Column(name = "sale_price", nullable = false, precision = 12, scale = 2)
-    BigDecimal salePrice;
+    @Column(name = "name", nullable = false)
+    String name;
+
+    @Column(name = "description")
+    String description;
 
     @Column(name = "created_at")
     @CreationTimestamp
@@ -41,5 +39,4 @@ public class ProductPrice {
     @Column(name = "updated_at")
     @UpdateTimestamp
     LocalDateTime updatedAt;
-
 }

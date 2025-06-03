@@ -1,45 +1,42 @@
-package org.example.demo.Modal.Entity;
+package org.example.demo.Modal.Entity.Products;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.example.demo.Enum.OrderStatus;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Set;
 
-@Table(name = "orders")
+@Table(name = "products")
 @Entity
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = lombok.AccessLevel.PRIVATE)
-public class Order {
+public class Product {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "sale_id", nullable = false)
-    User user;
+    @Column(name = "name")
+    String name;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
-    OrderStatus status = OrderStatus.PENDING_PAYMENT;
+    @Column(name = "original_price", precision = 12, scale = 2)
+    BigDecimal originalPrice;
 
-    @Column(name = "total",  nullable = false, precision = 12, scale = 2)
-    BigDecimal total;
+    @Column(name = "type")
+    String type;
 
     @Column(name = "created_at")
     @CreationTimestamp
     LocalDateTime createdAt;
 
-    @OneToMany(mappedBy = "order")
-    Set<OrderItem> orderItems = new HashSet<>();
+    @Column(name = "updated_at")
+    @UpdateTimestamp
+    LocalDateTime updatedAt;
 }

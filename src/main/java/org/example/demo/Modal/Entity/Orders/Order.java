@@ -1,38 +1,49 @@
-package org.example.demo.Modal.Entity;
+package org.example.demo.Modal.Entity.Orders;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.example.demo.Enum.Rank;
+import org.example.demo.Enum.OrderStatus;
+import org.example.demo.Modal.Entity.Users.User;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-@Table(name = "product_prices")
+@Table(name = "orders")
 @Entity
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = lombok.AccessLevel.PRIVATE)
-public class ProductPrice {
+public class Order {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     Long id;
-    
+
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    User user;
+
     @Enumerated(EnumType.STRING)
-    @Column(name = "rank",nullable = false)
-    Rank rank;
+    @Column(name = "status", nullable = false)
+    OrderStatus status;
 
-    @Column(name = "type", nullable = false)
-    String type;
+    @Column(name = "total_price", precision = 12, scale = 2)
+    BigDecimal totalPrice;
 
-    @Column(name = "sale_price", nullable = false, precision = 12, scale = 2)
-    BigDecimal salePrice;
+    @Column(name = "printing_price", precision = 12, scale = 2)
+    BigDecimal printingPrice;
+
+    @Column(name = "shipping_price", precision = 12, scale = 2)
+    BigDecimal shippingPrice;
+
+    @Column(name = "pre_shipping_price", precision = 12, scale = 2)
+    BigDecimal preShippingPrice;
 
     @Column(name = "created_at")
     @CreationTimestamp
