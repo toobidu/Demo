@@ -3,6 +3,7 @@ package org.example.demo.Modal.Entity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 
@@ -15,21 +16,24 @@ import java.time.LocalDateTime;
 public class RefreshToken {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
     Long id;
 
     @ManyToOne
-    @JoinColumn(name = "user_id", referencedColumnName = "id")
+    @JoinColumn(name = "user_id", nullable = false)
     User user;
 
-    @Column(name = "token")
+    @Column(name = "token", nullable = false)
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     String token;
 
-    @Column(name = "expires_at")
-    LocalDateTime expiresAt;
+    @Column(name = "expiry_date", nullable = false)
+    Long expiryDate;
 
-    @Column(name = "is_revoked")
-    boolean isRevoked = ;
+    @Column(name = "created_at")
+    @CreationTimestamp
+    LocalDateTime createdAt;
+
+    @Column(name = "revoked")
+    Boolean revoked = false;
 }

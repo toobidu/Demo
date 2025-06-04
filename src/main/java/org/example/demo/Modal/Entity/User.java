@@ -3,9 +3,8 @@ package org.example.demo.Modal.Entity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import org.example.demo.Enum.Rank;
-import org.example.demo.Enum.TypeAccount;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -16,7 +15,7 @@ import java.util.Set;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE)
+@FieldDefaults(level = lombok.AccessLevel.PRIVATE)
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -40,30 +39,35 @@ public class User {
     @Column(name = "phone", nullable = false)
     String phone;
 
-    @Column(name = "address", nullable = false)
-    String address;
-
     @Column(name = "email", nullable = false, unique = true)
     String email;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "rank", nullable = false)
-    Rank rank;
+    @Column(name = "rank_code", nullable = false)
+    String rankCode;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "type_account", nullable = false)
-    TypeAccount typeAccount;
+    @Column(name = "type_account_code", nullable = false)
+    String typeAccountCode;
 
     @Column(name = "created_at")
     @CreationTimestamp
     LocalDateTime createdAt;
 
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
-    Wallet wallet;
+    @Column(name = "updated_at")
+    @UpdateTimestamp
+    LocalDateTime updatedAt;
 
-    @OneToMany(mappedBy = "user")
+    @OneToMany(mappedBy = "users")
+    Set<UserRole> userRoles = new HashSet<>();
+
+    @OneToMany(mappedBy = "users")
     Set<RefreshToken> refreshTokens = new HashSet<>();
 
-    @OneToMany(mappedBy = "user")
-    List<UserRole> userRoles = new HashSet<>();
+    @OneToMany(mappedBy = "users")
+    Set<Wallet> wallets = new HashSet<>();
+
+    @OneToMany(mappedBy = "users")
+    Set<Order> orders = new HashSet<>();
+
+    @OneToMany(mappedBy = "users")
+    Set<Transaction> transactions = new HashSet<>();
 }

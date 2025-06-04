@@ -1,36 +1,36 @@
-package org.example.demo.Modal.Entity.Dictionary;
+package org.example.demo.Modal.Entity;
 
 import jakarta.persistence.*;
-import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.example.demo.Enum.DictionaryCode;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-@Table(name = "dictionaries")
-@Entity
+@Table(name = "products")
 @Data
-@NoArgsConstructor
+@Entity
 @AllArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE)
-public class Dictionary {
+@NoArgsConstructor
+@FieldDefaults(level = lombok.AccessLevel.PRIVATE)
+public class Product {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+            @Column(name = "id")
     Long id;
-
-    @Column(name = "code", nullable = false)
-    DictionaryCode code;
 
     @Column(name = "name", nullable = false)
     String name;
 
-    @Column(name = "description")
-    String description;
+    @Column(name = "original_price", nullable = false, precision = 12, scale = 2)
+    BigDecimal originalPrice;
+
+    @Column(name = "type_code", nullable = false)
+    String typeCode;
 
     @Column(name = "created_at")
     @CreationTimestamp

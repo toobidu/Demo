@@ -1,4 +1,4 @@
-package org.example.demo.Modal.Entity.Dictionary;
+package org.example.demo.Modal.Entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -10,29 +10,24 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 
-@Table(name = "dictionary_items")
-@Entity
+@Table(name = "attributes")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = lombok.AccessLevel.PRIVATE)
-public class DictionaryItem {
+public class Attribute {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "dictionary_id", nullable = false)
-    Dictionary dictionary;
-
     @Column(name = "code", nullable = false)
     String code;
 
-    @Column(name = "value", nullable = false)
-    String value;
+    @Column(name = "name", nullable = false)
+    String name;
 
-    @Column(name = "description")
+    @Column(name = "description", nullable = false)
     String description;
 
     @Column(name = "created_at")

@@ -1,9 +1,6 @@
 package org.example.demo.Modal.Entity;
 
-import jakarta.persistence.EmbeddedId;
-import jakarta.persistence.Entity;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -32,7 +29,7 @@ public class UserRole {
     private Role role;
 }
 
-class UserRoleId implements Serializable{
+class UserRoleId implements Serializable {
     Long userId;
     Long roleId;
 }

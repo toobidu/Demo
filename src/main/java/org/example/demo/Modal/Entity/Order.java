@@ -1,50 +1,46 @@
-package org.example.demo.Modal.Entity.Orders;
+package org.example.demo.Modal.Entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.example.demo.Enum.Size;
-import org.example.demo.Modal.Entity.Products.Product;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-@Table(name = "order_items")
+@Table(name = "orders")
 @Entity
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = lombok.AccessLevel.PRIVATE)
-public class OrderItem {
+public class Order {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     Long id;
 
     @ManyToOne
-    @JoinColumn(name = "order_id", nullable = false)
-    Order order;
+    @JoinColumn(name = "user_id", nullable = false)
+    User user;
 
-    @ManyToOne
-    @JoinColumn(name = "product_id", nullable = false)
-    Product product;
+    @Column(name = "status_code", nullable = false)
+    String statusCode;
 
-    @Column(name = "quantity", nullable = false)
-    Integer quantity;
+    @Column(name = "total_price", precision = 12, scale = 2)
+    BigDecimal totalPrice;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "size", nullable = false)
-    Size size;
+    @Column(name = "printing_price", precision = 12, scale = 2)
+    BigDecimal printingPrice;
 
-    @Column(name = "sale_price", nullable = false, precision = 12, scale = 2)
-    BigDecimal salePrice;
+    @Column(name = "shipping_price", precision = 12, scale = 2)
+    BigDecimal shippingPrice;
 
-    @Column(name = "unit_price", nullable = false, precision = 12, scale = 2)
-    BigDecimal unitPrice;
+    @Column(name = "pre_shipping_price", precision = 12, scale = 2)
+    BigDecimal preShippingPrice;
 
     @Column(name = "created_at")
     @CreationTimestamp
@@ -54,4 +50,7 @@ public class OrderItem {
     @UpdateTimestamp
     LocalDateTime updatedAt;
 
+    @ManyToOne
+    @JoinColumn(name = "status_code", nullable = false)
+    DictionaryItem statusDictionaryItem;
 }

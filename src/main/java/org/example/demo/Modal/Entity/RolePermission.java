@@ -1,4 +1,4 @@
-package org.example.demo.Modal.Entity.Users;
+package org.example.demo.Modal.Entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -8,28 +8,28 @@ import lombok.experimental.FieldDefaults;
 
 import java.io.Serializable;
 
-@Table(name = "user_roles")
+@Table(name = "role_permissions")
 @Entity
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = lombok.AccessLevel.PRIVATE)
-public class UserRole {
+public class RolePermission {
     @EmbeddedId
-    UserRoleId id;
-
-    @ManyToOne
-    @MapsId("userId")
-    @JoinColumn(name = "user_id")
-    private User user;
+    RolePermissionId id;
 
     @ManyToOne
     @MapsId("roleId")
     @JoinColumn(name = "role_id")
-    private Role role;
+    Role role;
+
+    @ManyToOne
+    @MapsId("permissionId")
+    @JoinColumn(name = "permission_id")
+    Permission permission;
 }
 
-class UserRoleId implements Serializable{
-    Long userId;
+class RolePermissionId implements Serializable {
     Long roleId;
+    Long permissionId;
 }

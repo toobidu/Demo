@@ -5,27 +5,31 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
-import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
-@Table(name = "wallets")
+@Table(name = "dictionaries")
 @Entity
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = lombok.AccessLevel.PRIVATE)
-public class Wallet {
+public class Dictionary {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     Long id;
 
-//    @ManyToOne
-//    @JoinColumn(name = "user_id", nullable = false)
-//    User user;
+    @Column(name = "code", nullable = false)
+    String code;
 
-    @Column(name = "balance", nullable = false, precision = 12, scale = 2)
-    BigDecimal balance;
+    @Column(name = "name", nullable = false)
+    String name;
+
+    @Column(name = "description")
+    String description;
 
     @Column(name = "created_at")
     @CreationTimestamp

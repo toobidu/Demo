@@ -1,14 +1,14 @@
-package org.example.demo.Modal.Entity.Users;
+package org.example.demo.Modal.Entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
 
-@Table(name = "permissions")
+@Table(name = "roles")
 @Entity
 @Data
 @FieldDefaults(level = lombok.AccessLevel.PRIVATE)
-public class Permission {
+public class Role {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")

@@ -1,12 +1,11 @@
-package org.example.demo.Modal.Entity.Finance;
+package org.example.demo.Modal.Entity;
 
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.example.demo.Enum.TransactionStatus;
-import org.example.demo.Modal.Entity.Users.User;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -15,10 +14,10 @@ import java.time.LocalDateTime;
 
 @Table(name = "transactions")
 @Entity
-@Data
 @NoArgsConstructor
 @AllArgsConstructor
-@FieldDefaults(level = lombok.AccessLevel.PRIVATE)
+@Data
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class Transaction {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -38,14 +37,15 @@ public class Transaction {
     @Column(name = "amount", nullable = false, precision = 12, scale = 2)
     BigDecimal amount;
 
-    @Column(name = "status", nullable = false)
-    TransactionStatus status;
+    @Column(name = "status_code", nullable = false)
+    String statusCode;
 
-    @Column(name = "type", nullable = false)
-    String type;
+    @Column(name = "type_code", nullable = false)
+    String typeCode;
 
-    @Column(name = "order_id")
-    Long orderId;
+    @ManyToOne
+    @JoinColumn(name = "order_id", nullable = false)
+    Order order;
 
     @Column(name = "created_at")
     @CreationTimestamp

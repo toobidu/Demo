@@ -1,4 +1,4 @@
-package org.example.demo.Modal.Entity.Products;
+package org.example.demo.Modal.Entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -11,26 +11,24 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-@Table(name = "products")
+@Table(name = "wallets")
 @Entity
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = lombok.AccessLevel.PRIVATE)
-public class Product {
+public class Wallet {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     Long id;
 
-    @Column(name = "name")
-    String name;
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    User user;
 
-    @Column(name = "original_price", precision = 12, scale = 2)
-    BigDecimal originalPrice;
-
-    @Column(name = "type")
-    String type;
+    @Column(name = "balance", nullable = false, precision = 12, scale = 2)
+    BigDecimal balance;
 
     @Column(name = "created_at")
     @CreationTimestamp
