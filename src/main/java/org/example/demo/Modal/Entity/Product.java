@@ -20,7 +20,7 @@ import java.time.LocalDateTime;
 public class Product {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-            @Column(name = "id")
+    @Column(name = "id")
     Long id;
 
     @Column(name = "name", nullable = false)
