@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  postgres:
+    build: .
+    container_name: demo
+    environment:
+      POSTGRES_USER: demo
+      POSTGRES_PASSWORD: demo
+      POSTGRES_DB: demo
+    ports:
+      - "5439:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./src/main/resources/demo.sql:/docker-entrypoint-initdb.d/demo.sql:ro
+
+volumes:
+  postgres_data:

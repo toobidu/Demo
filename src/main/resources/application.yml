@@ -6,8 +6,14 @@ spring:
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: update
     show-sql: true
 
 server:
   port: 8081
+
+jwt:
+  secret: "e3a12c4a4cbc64ba2cc3f262a776e4d92bb51718f46d251b2e81c5bb3c84b04f015d143d4cb8a3f0c1c06b9205103498c9268ebd633803824dc298c3ad205fe6"
+  secret-key: ${jwt.secret}
+  expiration: 86400000 # a day
+  refresh-expiration: 604800000 # 7 days
