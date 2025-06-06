@@ -13,7 +13,6 @@ server:
   port: 8081
 
 jwt:
-  secret: "e3a12c4a4cbc64ba2cc3f262a776e4d92bb51718f46d251b2e81c5bb3c84b04f015d143d4cb8a3f0c1c06b9205103498c9268ebd633803824dc298c3ad205fe6"
-  secret-key: ${jwt.secret}
+  secret-key: "7383622A462D713B58F92C271714A"
   expiration: 86400000 # a day
   refresh-expiration: 604800000 # 7 days

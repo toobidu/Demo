@@ -9,16 +9,6 @@ public record ApiResponse<T>(
         LocalDateTime timestamp,
         String path
 ) {
-    public static <T> ApiResponse<T> success(T data) {
-        return new ApiResponse<>(
-                true,
-                null,
-                data,
-                LocalDateTime.now(),
-                null
-        );
-    }
-
     public static <T> ApiResponse<T> success(String message, T data) {
         return new ApiResponse<>(
                 true,
