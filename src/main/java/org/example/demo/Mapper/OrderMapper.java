@@ -1,11 +1,10 @@
 package org.example.demo.Mapper;
 
-import org.example.demo.Modal.DTO.OrderDTO;
-import org.example.demo.Modal.Entity.Order;
+import org.example.demo.Modal.DTO.Orders.OrderDTO;
+import org.example.demo.Modal.Entity.Orders.Order;
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 
-@Mapper(componentModel = "spring", uses = {UserMapper.class, WalletMapper.class, OrderItemMapper.class})
+@Mapper(componentModel = "spring")
 public interface OrderMapper {
     OrderDTO toDTO(Order order);
     Order toEntity(OrderDTO orderDTO);
