@@ -11,6 +11,8 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class OrderDTO {
+    private Long id;
+    private Long userId;
     private String status;
     private BigDecimal totalAmount;
     private BigDecimal printPrice;

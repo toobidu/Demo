@@ -37,9 +37,9 @@ public class RedisService {
     //Kiểm tra quyền của người dùng
     //Nếu true -> có quyền
     //Nếu false -> không có quyền
-    public boolean hasAuth2(Long userId, String permission){
+    public boolean hasAuth2(Long userId, String permission) {
         Set<String> permissions = getUserPermissions(userId);
-        if (permissions == null || permissions.isEmpty()){
+        if (permissions == null || permissions.isEmpty()) {
             log.warn("Không có quyền nào của userId: {} trong Redis.", userId);
         }
         boolean hasPermission = permissions.contains(permission);

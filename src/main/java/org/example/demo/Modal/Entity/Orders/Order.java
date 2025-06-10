@@ -2,6 +2,7 @@ package org.example.demo.Modal.Entity.Orders;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.example.demo.Modal.Entity.Users.User;
 import org.example.demo.Modal.Entity.Finance.Wallet;
@@ -14,6 +15,7 @@ import java.math.BigDecimal;
 @Table(name = "orders")
 @NoArgsConstructor
 @AllArgsConstructor
+@Data
 public class Order {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
