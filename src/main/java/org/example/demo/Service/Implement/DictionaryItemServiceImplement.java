@@ -35,7 +35,7 @@ public class DictionaryItemServiceImplement implements IDictionaryItemService {
                 });
 
         DictionaryItem item = dictionaryItemMapper.toEntity(dto);
-        item.setDictionaries(dictionary);
+        item.setDictionary(dictionary);
 
         DictionaryItem savedItem = dictionaryItemRepository.save(item);
         log.info("Dictionary item created with ID: {}", savedItem.getId());
@@ -93,7 +93,7 @@ public class DictionaryItemServiceImplement implements IDictionaryItemService {
         log.info("Retrieving dictionary items for dictionaryId: {}", dictionaryId);
 
         List<DictionaryItem> items = (dictionaryId != null)
-                ? dictionaryItemRepository.findByDictionaryId(dictionaryId)
+                ? dictionaryItemRepository.findByDictionary_Id(dictionaryId)
                 : dictionaryItemRepository.findAll();
 
         return items.stream()

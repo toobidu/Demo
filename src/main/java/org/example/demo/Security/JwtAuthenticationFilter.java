@@ -18,17 +18,35 @@ import java.io.IOException;
 @Slf4j
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
     private final JwtUtil jwtUtil;
     private final RedisService redisService;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
-            throws ServletException, IOException {
+    protected void doFilterInternal(
+            @NonNull HttpServletRequest request,
+            @NonNull HttpServletResponse response,
+            @NonNull FilterChain filterChain
+    ) throws ServletException, IOException {
         log.debug("Processing request: {} {}", request.getMethod(), request.getRequestURI());
 
+        // Bỏ qua các endpoint không cần xác thực
+        String path = request.getRequestURI();
+        if (path.startsWith("/api/auth/login") || 
+            path.startsWith("/api/auth/register") || 
+            path.startsWith("/api/auth/refresh")) {
+            log.debug("Skipping authentication for public endpoint: {}", path);
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         String header = request.getHeader("Authorization");
+        log.debug("Authorization Header: [{}]", header);
+
         if (header != null && header.startsWith("Bearer ")) {
-            String token = header.substring(7);
+            String token = header.substring(7).trim();
+            log.debug("Extracted Token: [{}]", token);
+
             if (jwtUtil.validateToken(token)) {
                 Long userId = jwtUtil.getUserIdFromToken(token);
                 String requiredPermission = getRequiredPermission(request);
@@ -38,6 +56,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     response.sendError(HttpServletResponse.SC_FORBIDDEN, "Insufficient permissions");
                     return;
                 }
+
                 SecurityContextHolder.getContext().setAuthentication(new JwtAuthenticationToken(userId));
                 log.info("User {} authorized for request", userId);
             } else {
@@ -46,14 +65,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 return;
             }
         } else {
-            log.debug("No Bearer token found, proceeding request");
+            log.debug("No Bearer token found");
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Authentication required");
+            return;
         }
+
         filterChain.doFilter(request, response);
     }
 
     private String getRequiredPermission(HttpServletRequest request) {
         String path = request.getRequestURI();
         String method = request.getMethod();
+
         if (path.startsWith("/api/users") && method.equals("POST")) return "create_user";
         if (path.startsWith("/api/users") && method.equals("PUT")) return "update_user";
         if (path.startsWith("/api/users") && method.equals("DELETE")) return "delete_user";
@@ -77,6 +100,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (path.startsWith("/api/wallets/deposit") && method.equals("POST")) return "manage_wallets";
         if (path.startsWith("/api/wallets") && method.equals("GET")) return "manage_wallets";
         if (path.startsWith("/api/dictionaries") || path.startsWith("/api/dictionary_items")) return "manage_users";
+
         return "";
     }
 }

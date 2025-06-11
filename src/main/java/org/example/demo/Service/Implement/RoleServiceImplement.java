@@ -23,7 +23,7 @@ public class RoleServiceImplement implements IRoleService {
     @Override
     public RoleDTO createRole(RoleDTO roleDTO) {
         log.info("Creating role: {}", roleDTO.getRoleName());
-        if (roleRepository.findByName(roleDTO.getRoleName()).isPresent()) {
+        if (roleRepository.findByRoleName(roleDTO.getRoleName()).isPresent()) {
             log.error("Role already exists: {}", roleDTO.getRoleName());
             throw new UserFriendlyException("Role already exists");
         }

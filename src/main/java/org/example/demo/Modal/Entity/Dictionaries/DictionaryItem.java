@@ -18,7 +18,7 @@ public class DictionaryItem {
 
     @ManyToOne
     @JoinColumn(name = "dictionary_id")
-    private Dictionary dictionaries;
+    private Dictionary dictionary;
 
     @Column(name = "code")
     private String code;

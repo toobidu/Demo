@@ -8,5 +8,6 @@ import java.util.List;
 
 @Repository
 public interface DictionaryItemRepository extends JpaRepository<DictionaryItem, Long> {
-    List<DictionaryItem> findByDictionaryId(Long dictionaryId);
+    List<DictionaryItem> findByDictionary_Id(Long dictionaryId);
+
 }

@@ -38,7 +38,7 @@ public class DictionaryServiceImplement implements IDictionaryService {
 
         // Gán quan hệ ngược cho từng item (tránh lỗi effectively final)
         if (tempDictionary.getDictionaryItems() != null) {
-            tempDictionary.getDictionaryItems().forEach(item -> item.setDictionaries(tempDictionary));
+            tempDictionary.getDictionaryItems().forEach(item -> item.setDictionary(tempDictionary));
         }
 
         Dictionary savedDictionary = dictionaryRepository.save(tempDictionary);
@@ -69,7 +69,7 @@ public class DictionaryServiceImplement implements IDictionaryService {
         if (dictionaryDTO.getDictionaryItems() != null) {
             for (var itemDTO : dictionaryDTO.getDictionaryItems()) {
                 DictionaryItem dictionaryItem = dictionaryItemMapper.toEntity(itemDTO);
-                dictionaryItem.setDictionaries(dictionary); // giữ liên kết ngược
+                dictionaryItem.setDictionary(dictionary); // giữ liên kết ngược
                 dictionary.getDictionaryItems().add(dictionaryItem);
             }
         }

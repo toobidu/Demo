@@ -12,6 +12,7 @@ import org.example.demo.Repository.WalletRepository;
 import org.example.demo.Service.Interface.IUserService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -21,6 +22,7 @@ import java.util.stream.Collectors;
 @Service
 @Slf4j
 @RequiredArgsConstructor
+@Transactional
 public class UserServiceImplement implements IUserService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
@@ -29,14 +31,16 @@ public class UserServiceImplement implements IUserService {
 
     @Override
     public UserDTO createUser(UserDTO userDTO) {
-        log.info("Creating user: {}", userDTO.getUserName());
-        validateUniqueUserName(userDTO.getUserName());
+        log.info("Creating user: {}", userDTO.getUsername());
+        validateUniqueUserName(userDTO.getUsername());
         validateUniqueEmail(userDTO.getEmail());
 
         User user = buildNewUserFromDTO(userDTO);
         user = userRepository.save(user);
 
-        createWalletForUser(user);
+        if (!walletRepository.existsById(user.getId())) {
+            createWalletForUser(user);
+        }
 
         log.info("User created with ID: {}", user.getId());
         return userMapper.toDTO(user);
@@ -75,10 +79,10 @@ public class UserServiceImplement implements IUserService {
         return users.stream().map(userMapper::toDTO).collect(Collectors.toList());
     }
 
-    // Tách nhỏ logic thành các hàm
+    // Helper methods
 
     private void validateUniqueUserName(String userName) {
-        if (userRepository.findByUserName(userName).isPresent()) {
+        if (userRepository.findByUsername(userName).isPresent()) {
             log.error("Username already exists: {}", userName);
             throw new UserFriendlyException("Username already exists");
         }
@@ -106,6 +110,7 @@ public class UserServiceImplement implements IUserService {
         wallet.setCreatedAt(LocalDateTime.now());
         wallet.setUpdatedAt(LocalDateTime.now());
         walletRepository.save(wallet);
+        log.info("Wallet created for user ID: {}", user.getId());
     }
 
     private User findUserById(Long id) {
@@ -117,7 +122,7 @@ public class UserServiceImplement implements IUserService {
     }
 
     private void updateUserFields(User user, UserDTO dto) {
-        user.setUserName(dto.getUserName());
+        user.setUsername(dto.getUsername());
         user.setFirstName(dto.getFirstName());
         user.setLastName(dto.getLastName());
         user.setEmail(dto.getEmail());

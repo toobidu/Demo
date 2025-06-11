@@ -25,7 +25,7 @@ public class Dictionary {
     @Column(name = "name")
     private String name;
 
-    @OneToMany(mappedBy = "dictionaries", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "dictionary", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<DictionaryItem> dictionaryItems = new HashSet<>();
 
 }

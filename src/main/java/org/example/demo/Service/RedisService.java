@@ -16,10 +16,27 @@ public class RedisService {
 
     //Lưu quyền cho người dùng vào Redis với TTL là 24 giờ
     public void saveUserPermissions(Long userId, Set<String> permissions) {
-        log.debug("Lưu quyền cho người dùng: {}", userId);
-        String key = "authorities:" + userId;
-        redisTemplate.opsForValue().set(key, permissions, 24, TimeUnit.HOURS);
-        log.info("Quyền đã được lưu vào Redis cho người dùng: {}", userId);
+        try {
+            String key = "user:" + userId + ":permissions";
+            log.info("Lưu quyền vào Redis với key: {}", key);
+            
+            // Xóa key cũ nếu có
+            redisTemplate.delete(key);
+            
+            // Lưu từng quyền một để tránh lỗi serialization
+            if (!permissions.isEmpty()) {
+                for (String permission : permissions) {
+                    redisTemplate.opsForSet().add(key, permission);
+                }
+                // Đặt thời gian sống cho key (24 giờ)
+                redisTemplate.expire(key, 24, TimeUnit.HOURS);
+            }
+            
+            log.info("Đã lưu {} quyền cho userId {} vào Redis", permissions.size(), userId);
+        } catch (Exception e) {
+            log.error("Lỗi khi lưu quyền vào Redis: ", e);
+            // Không throw exception, chỉ ghi log
+        }
     }
 
     //Lấy danh sách quyền của người dùng từ Redis
@@ -38,12 +55,15 @@ public class RedisService {
     //Nếu true -> có quyền
     //Nếu false -> không có quyền
     public boolean hasAuth2(Long userId, String permission) {
-        Set<String> permissions = getUserPermissions(userId);
-        if (permissions == null || permissions.isEmpty()) {
-            log.warn("Không có quyền nào của userId: {} trong Redis.", userId);
+        try {
+            String key = "user:" + userId + ":permissions";
+            Boolean isMember = redisTemplate.opsForSet().isMember(key, permission);
+            boolean hasPermission = Boolean.TRUE.equals(isMember);
+            log.debug("UserId: {} có quyền {}: {}", userId, permission, hasPermission);
+            return hasPermission;
+        } catch (Exception e) {
+            log.error("Lỗi khi kiểm tra quyền từ Redis: ", e);
+            return false;
         }
-        boolean hasPermission = permissions.contains(permission);
-        log.debug("UserId: {} có quyền: {}: {}", userId, permission, hasPermission);
-        return hasPermission;
     }
 }

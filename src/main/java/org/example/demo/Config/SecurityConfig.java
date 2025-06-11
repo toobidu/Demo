@@ -7,6 +7,7 @@ import org.example.demo.Service.CustomerUserService;
 import org.example.demo.Service.RedisService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -17,6 +18,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Configuration
 @EnableWebSecurity
@@ -24,6 +27,7 @@ public class SecurityConfig {
     private final JwtUtil jwtUtil;
     private final RedisService redisService;
     private final CustomerUserService customerUserService;
+    private static final Logger log = LoggerFactory.getLogger(SecurityConfig.class);
 
     public SecurityConfig(JwtUtil jwtUtil, RedisService redisService, CustomerUserService customerUserService) {
         this.jwtUtil = jwtUtil;
@@ -34,7 +38,6 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // Tắt CSRF vì dùng JWT
                 .csrf(AbstractHttpConfigurer::disable)
 
                 // Stateless session
@@ -43,15 +46,20 @@ public class SecurityConfig {
                 // Phân quyền
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/users").permitAll()
                         .anyRequest().authenticated()
                 )
 
                 // Xử lý lỗi 401 và 403
                 .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint((request, response, authException) ->
-                                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized"))
-                        .accessDeniedHandler((request, response, accessDeniedException) ->
-                                response.sendError(HttpServletResponse.SC_FORBIDDEN, "Forbidden"))
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            log.error("Unauthorized error: {}", authException.getMessage());
+                            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
+                        })
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            log.error("Access denied: {}", accessDeniedException.getMessage());
+                            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Forbidden");
+                        })
                 )
 
                 // Gắn JWT filter trước UsernamePasswordAuthenticationFilter
@@ -69,6 +77,7 @@ public class SecurityConfig {
     // Bean encoder mật khẩu
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+        // Use consistent strength parameter (default is 10)
+        return new BCryptPasswordEncoder(10);
     }
 }
