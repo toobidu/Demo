@@ -12,10 +12,11 @@ import org.example.demo.Modal.DTO.Authentication.RegisterRequest;
 import org.example.demo.Modal.DTO.Users.UserDTO;
 import org.example.demo.Modal.Entity.Authentication.Token;
 import org.example.demo.Modal.Entity.Finance.Wallet;
+import org.example.demo.Modal.Entity.Users.Role;
 import org.example.demo.Modal.Entity.Users.User;
-import org.example.demo.Repository.TokenRepository;
-import org.example.demo.Repository.UserRepository;
-import org.example.demo.Repository.WalletRepository;
+import org.example.demo.Modal.Entity.Users.UserRole;
+import org.example.demo.Modal.Entity.Users.UserRoleId;
+import org.example.demo.Repository.*;
 import org.example.demo.Security.JwtUtil;
 import org.example.demo.Service.RedisService;
 import org.springframework.http.HttpStatus;
@@ -40,6 +41,8 @@ public class AuthController {
     private final RedisService redisService;
     private final UserMapper userMapper;
     private final WalletRepository walletRepository;
+    private final UserRoleRepository userRoleRepository;
+    private final RoleRepository roleRepository;
 
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<LoginResponse>> login(@Valid @RequestBody LoginRequest loginRequest) {
@@ -114,7 +117,8 @@ public class AuthController {
     @Transactional
     public ResponseEntity<ApiResponse<UserDTO>> register(@Valid @RequestBody RegisterRequest registerRequest) {
         try {
-            log.info("Đăng ký với username: {}, email: {}", registerRequest.getUsername(), registerRequest.getEmail());
+            log.info("Đăng ký với username: {}, email: {}, typeAccount: {}", 
+                    registerRequest.getUsername(), registerRequest.getEmail(), registerRequest.getTypeAccount());
 
             // Validate input
             if (registerRequest.getUsername() == null || registerRequest.getUsername().trim().isEmpty()) {
@@ -158,8 +162,7 @@ public class AuthController {
 
             // Lưu user
             user = userRepository.save(user);
-            log.info("Đã lưu user với ID: {}, passwordHash: {}", user.getId(),
-                    user.getPasswordHash() != null ? "Present" : "NULL");
+            log.info("Đã lưu user với ID: {}", user.getId());
 
             // Tạo ví nếu chưa có
             if (!walletRepository.existsByUserId(user.getId())) {
@@ -172,6 +175,10 @@ public class AuthController {
                 log.info("Đã tạo ví cho user ID: {}", user.getId());
             }
 
+            // Tự động gán role dựa trên typeAccount
+            assignRoleBasedOnTypeAccount(user);
+            log.info("Đã gán role cho user ID: {}", user.getId());
+
             log.info("Đăng ký thành công: {}", user.getUsername());
             return ResponseEntity.ok(ApiResponse.success("Đăng kí thành công!", userMapper.toDTO(user)));
 
@@ -179,6 +186,46 @@ public class AuthController {
             log.error("Lỗi đăng ký: ", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.error("Lỗi đăng ký: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Gán role cho user dựa trên typeAccount
+     */
+    private void assignRoleBasedOnTypeAccount(User user) {
+        try {
+            String typeAccount = user.getTypeAccount();
+            if (typeAccount == null || typeAccount.isEmpty()) {
+                log.warn("TypeAccount is null or empty for user ID: {}", user.getId());
+                return;
+            }
+
+            // Chuyển đổi typeAccount thành roleName (thường là viết hoa)
+            String roleName = typeAccount.toUpperCase();
+            log.info("Tìm role với roleName: {}", roleName);
+
+            // Tìm role tương ứng
+            Role role = roleRepository.findByRoleName(roleName)
+                    .orElseThrow(() -> {
+                        log.error("Không tìm thấy role với tên: {}", roleName);
+                        return new UserFriendlyException("Không tìm thấy role tương ứng với typeAccount: " + typeAccount);
+                    });
+
+            // Tạo UserRole và thiết lập quan hệ
+            UserRole userRole = new UserRole();
+            UserRoleId userRoleId = new UserRoleId();
+            userRoleId.setUserId(user.getId());
+            userRoleId.setRoleId(role.getId());
+            userRole.setId(userRoleId);
+            userRole.setUser(user);
+            userRole.setRole(role);
+
+            // Lưu vào database
+            userRoleRepository.save(userRole);
+            log.info("Đã gán role {} cho user ID: {}", roleName, user.getId());
+        } catch (Exception e) {
+            log.error("Lỗi khi gán role cho user: ", e);
+            throw e; // Re-throw để xử lý ở mức cao hơn
         }
     }
 

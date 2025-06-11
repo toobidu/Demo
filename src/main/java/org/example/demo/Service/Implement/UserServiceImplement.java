@@ -6,8 +6,13 @@ import org.example.demo.Exception.UserFriendlyException;
 import org.example.demo.Mapper.UserMapper;
 import org.example.demo.Modal.DTO.Users.UserDTO;
 import org.example.demo.Modal.Entity.Finance.Wallet;
+import org.example.demo.Modal.Entity.Users.Role;
 import org.example.demo.Modal.Entity.Users.User;
+import org.example.demo.Modal.Entity.Users.UserRole;
+import org.example.demo.Modal.Entity.Users.UserRoleId;
+import org.example.demo.Repository.RoleRepository;
 import org.example.demo.Repository.UserRepository;
+import org.example.demo.Repository.UserRoleRepository;
 import org.example.demo.Repository.WalletRepository;
 import org.example.demo.Service.Interface.IUserService;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -28,6 +33,8 @@ public class UserServiceImplement implements IUserService {
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final WalletRepository walletRepository;
+    private final RoleRepository roleRepository;
+    private final UserRoleRepository userRoleRepository;
 
     @Override
     public UserDTO createUser(UserDTO userDTO) {
@@ -41,6 +48,10 @@ public class UserServiceImplement implements IUserService {
         if (!walletRepository.existsById(user.getId())) {
             createWalletForUser(user);
         }
+
+        // Tự động gán role dựa trên typeAccount
+        assignRoleBasedOnTypeAccount(user);
+        log.info("Đã gán role cho user ID: {}", user.getId());
 
         log.info("User created with ID: {}", user.getId());
         return userMapper.toDTO(user);
@@ -148,6 +159,46 @@ public class UserServiceImplement implements IUserService {
                     .collect(Collectors.toList());
         } else {
             return userRepository.findAll();
+        }
+    }
+
+    /**
+     * Gán role cho user dựa trên typeAccount
+     */
+    private void assignRoleBasedOnTypeAccount(User user) {
+        try {
+            String typeAccount = user.getTypeAccount();
+            if (typeAccount == null || typeAccount.isEmpty()) {
+                log.warn("TypeAccount is null or empty for user ID: {}", user.getId());
+                return;
+            }
+
+            // Chuyển đổi typeAccount thành roleName (thường là viết hoa)
+            String roleName = typeAccount.toUpperCase();
+            log.info("Tìm role với roleName: {}", roleName);
+
+            // Tìm role tương ứng
+            Role role = roleRepository.findByRoleName(roleName)
+                    .orElseThrow(() -> {
+                        log.error("Không tìm thấy role với tên: {}", roleName);
+                        return new UserFriendlyException("Không tìm thấy role tương ứng với typeAccount: " + typeAccount);
+                    });
+
+            // Tạo UserRole và thiết lập quan hệ
+            UserRole userRole = new UserRole();
+            UserRoleId userRoleId = new UserRoleId();
+            userRoleId.setUserId(user.getId());
+            userRoleId.setRoleId(role.getId());
+            userRole.setId(userRoleId);
+            userRole.setUser(user);
+            userRole.setRole(role);
+
+            // Lưu vào database
+            userRoleRepository.save(userRole);
+            log.info("Đã gán role {} cho user ID: {}", roleName, user.getId());
+        } catch (Exception e) {
+            log.error("Lỗi khi gán role cho user: ", e);
+            throw e; // Re-throw để xử lý ở mức cao hơn
         }
     }
 }
