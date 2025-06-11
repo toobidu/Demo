@@ -12,6 +12,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TransactionDTO {
+    private Long id;
     private Long fromWalletId;
     private Long toWalletId;
     private BigDecimal amount;

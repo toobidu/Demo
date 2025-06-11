@@ -2,9 +2,10 @@ package org.example.demo.Security;
 
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.demo.Config.JwtConfig;
 import org.example.demo.Exception.UserFriendlyException;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -13,18 +14,12 @@ import java.util.Date;
 
 @Component
 @Slf4j
+@RequiredArgsConstructor
 public class JwtUtil {
-    @Value("${jwt.secret-key}")
-    private String secret;
-
-    @Value("${jwt.access-expiration}")
-    private Long accessExpiration;
-
-    @Value("${jwt.refresh-expiration}")
-    private Long refreshExpiration;
+    private final JwtConfig jwtConfig;
 
     private SecretKey getSigningKey() {
-        return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        return Keys.hmacShaKeyFor(jwtConfig.getSecret().getBytes(StandardCharsets.UTF_8));
     }
 
     public String generateAccessToken(Long userId) {
@@ -32,7 +27,7 @@ public class JwtUtil {
         return Jwts.builder()
                 .subject(userId.toString())
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + accessExpiration))
+                .expiration(new Date(System.currentTimeMillis() + jwtConfig.getAccessExpiration()))
                 .signWith(getSigningKey())
                 .compact();
     }
@@ -42,7 +37,7 @@ public class JwtUtil {
         return Jwts.builder()
                 .subject(userId.toString())
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + refreshExpiration))
+                .expiration(new Date(System.currentTimeMillis() + jwtConfig.getRefreshExpiration()))
                 .signWith(getSigningKey())
                 .compact();
     }
@@ -78,7 +73,7 @@ public class JwtUtil {
     }
 
     public long getRefreshExpiration() {
-        return refreshExpiration;
+        return jwtConfig.getRefreshExpiration();
     }
 
 }

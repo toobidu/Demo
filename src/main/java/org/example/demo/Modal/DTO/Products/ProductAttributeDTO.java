@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ProductAttributeDTO {
+    private Long id;
+    private Long productId;
     private String attributeKey;
     private String attributeValue;
 }

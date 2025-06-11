@@ -70,9 +70,22 @@ public class UserServiceImplement implements IUserService {
     }
 
     @Override
-    public List<UserDTO> getAllUsers(String typeAccount) {
-        log.info("Truy vấn tới người dùng: {}", typeAccount);
-        List<User> users = typeAccount != null ? userRepository.findByTypeAccount(typeAccount) : userRepository.findAll();
+    public List<UserDTO> getAllUsers(String typeAccount, String rank) {
+        log.info("Retrieving users with typeAccount: {}, rank: {}", typeAccount, rank);
+        List<User> users;
+        if (typeAccount != null && rank != null) {
+            users = userRepository.findAll().stream()
+                    .filter(u -> u.getTypeAccount().equals(typeAccount) && u.getRank().equals(rank))
+                    .collect(Collectors.toList());
+        } else if (typeAccount != null) {
+            users = userRepository.findByTypeAccount(typeAccount);
+        } else if (rank != null) {
+            users = userRepository.findAll().stream()
+                    .filter(u -> u.getRank().equals(rank))
+                    .collect(Collectors.toList());
+        } else {
+            users = userRepository.findAll();
+        }
         return users.stream().map(userMapper::toDTO).collect(Collectors.toList());
     }
 }

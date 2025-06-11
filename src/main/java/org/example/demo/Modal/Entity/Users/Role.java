@@ -2,6 +2,7 @@ package org.example.demo.Modal.Entity.Users;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.HashSet;
@@ -11,6 +12,7 @@ import java.util.Set;
 @Table(name = "roles")
 @NoArgsConstructor
 @AllArgsConstructor
+@Data
 public class Role {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)

@@ -4,8 +4,9 @@ import org.example.demo.Modal.DTO.Products.ProductAttributeDTO;
 import org.example.demo.Modal.Entity.Products.ProductAttribute;
 import org.mapstruct.Mapper;
 
-@Mapper
+@Mapper(componentModel = "spring")
 public interface ProductAttributeMapper {
     ProductAttributeDTO toDTO(ProductAttribute productAttribute);
+
     ProductAttribute toEntity(ProductAttributeDTO productAttributeDTO);
 }

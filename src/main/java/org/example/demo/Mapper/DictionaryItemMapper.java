@@ -4,8 +4,9 @@ import org.example.demo.Modal.DTO.Dictionaries.DictionaryItemDTO;
 import org.example.demo.Modal.Entity.Dictionaries.DictionaryItem;
 import org.mapstruct.Mapper;
 
-@Mapper
+@Mapper(componentModel = "spring")
 public interface DictionaryItemMapper {
     DictionaryItemDTO toDTO(DictionaryItem dictionaryItem);
+
     DictionaryItem toEntity(DictionaryItemDTO dictionaryItemDTO);
 }

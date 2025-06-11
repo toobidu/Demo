@@ -11,6 +11,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class WalletDTO {
+    private Long id;
     private String walletName;
     private BigDecimal balance;
     private List<TransactionDTO> transactions;

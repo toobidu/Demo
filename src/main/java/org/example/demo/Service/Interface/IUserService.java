@@ -14,5 +14,5 @@ public interface IUserService {
 
     UserDTO getUser(Long id);
 
-    List<UserDTO> getAllUsers(String typeAccount);
+    List<UserDTO> getAllUsers(String typeAccount, String rank);
 }

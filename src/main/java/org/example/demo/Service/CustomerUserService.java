@@ -8,8 +8,6 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-
 @Service
 @RequiredArgsConstructor
 public class CustomerUserService implements UserDetailsService {
@@ -18,11 +16,11 @@ public class CustomerUserService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         User user = userRepository.findByUserName(username)
-                .orElseThrow(() -> new UsernameNotFoundException("Tên người dùng không tìm thấy: " + username));
-        return new org.springframework.security.core.userdetails.User(
-                user.getUserName(),
-                user.getPasswordHash(),
-                new ArrayList<>() // Danh sách quyền sẽ được kiểm tra qua Redis
-        );
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+        return org.springframework.security.core.userdetails.User
+                .withUsername(user.getUserName())
+                .password(user.getPasswordHash())
+                .authorities("USER") // Quyền cơ bản, phân quyền chi tiết dùng Redis
+                .build();
     }
 }

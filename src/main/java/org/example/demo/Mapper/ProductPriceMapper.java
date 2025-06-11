@@ -7,5 +7,6 @@ import org.mapstruct.Mapper;
 @Mapper(componentModel = "spring")
 public interface ProductPriceMapper {
     ProductPriceDTO toDTO(ProductPrice productPrice);
+
     ProductPrice toEntity(ProductPriceDTO productPriceDTO);
 }

@@ -6,7 +6,7 @@ import org.example.demo.Exception.UserFriendlyException;
 import org.example.demo.Mapper.OrderMapper;
 import org.example.demo.Modal.DTO.Orders.OrderDTO;
 import org.example.demo.Modal.Entity.Orders.Order;
-import org.example.demo.Repository.OrderRepository;
+import org.example.demo.Repository.*;
 import org.example.demo.Service.Interface.IOrderService;
 import org.springframework.stereotype.Service;
 
@@ -17,8 +17,12 @@ import java.util.stream.Collectors;
 @Slf4j
 @RequiredArgsConstructor
 public class OrderServiceImplement implements IOrderService {
+    private final UserRepository userRepository;
     private final OrderRepository orderRepository;
     private final OrderMapper orderMapper;
+    private final ProductPriceRepository productPriceRepository;
+    private final WalletRepository walletRepository;
+    private final OrderItemRepository orderItemRepository;
 
     @Override
     public OrderDTO createOrder(OrderDTO orderDTO) {

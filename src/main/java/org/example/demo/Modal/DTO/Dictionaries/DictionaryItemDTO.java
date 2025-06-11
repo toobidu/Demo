@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DictionaryItemDTO {
+    private Long id;
+    private Long dictionaryId;
     private String code;
     private String name;
 }

@@ -34,7 +34,7 @@ public class AuthController {
     private final UserRepository userRepository;
     private final TokenRepository tokenRepository;
     private final JwtUtil jwtUtil;
-    private PasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
     private final RedisService redisService;
     private final UserMapper userMapper;
 

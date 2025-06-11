@@ -18,12 +18,13 @@ import java.io.IOException;
 @Slf4j
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
-    private JwtUtil jwtUtil;
-    private RedisService redisService;
+    private final JwtUtil jwtUtil;
+    private final RedisService redisService;
 
     @Override
-    protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws ServletException, IOException {
-        log.debug("Đang gửi yêu cầu: {} {}", request.getMethod(), request.getRequestURI());
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
+        log.debug("Processing request: {} {}", request.getMethod(), request.getRequestURI());
 
         String header = request.getHeader("Authorization");
         if (header != null && header.startsWith("Bearer ")) {
@@ -32,21 +33,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 Long userId = jwtUtil.getUserIdFromToken(token);
                 String requiredPermission = getRequiredPermission(request);
 
-                // Bỏ qua kiểm tra quyền nếu không yêu cầu quyền cụ thể
                 if (!requiredPermission.isEmpty() && !redisService.hasAuth2(userId, requiredPermission)) {
-                    log.warn("Người dùng {} không có quyền truy cập: {}", userId, requiredPermission);
+                    log.warn("User {} lacks permission: {}", userId, requiredPermission);
                     response.sendError(HttpServletResponse.SC_FORBIDDEN, "Insufficient permissions");
                     return;
                 }
                 SecurityContextHolder.getContext().setAuthentication(new JwtAuthenticationToken(userId));
-                log.info("Người dùng {} được phép truy cập", userId);
+                log.info("User {} authorized for request", userId);
             } else {
-                log.warn("Token không hợp lệ!");
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token không khả dụng!");
+                log.warn("Invalid JWT token");
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid token");
                 return;
             }
-        } else {
-            log.debug("Không có token! Đang bỏ qua kiểm tra JWT.");
         }
         filterChain.doFilter(request, response);
     }
