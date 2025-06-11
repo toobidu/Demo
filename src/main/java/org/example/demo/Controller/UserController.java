@@ -14,6 +14,7 @@ import java.util.List;
 @RequestMapping("api/v1/users")
 @RequiredArgsConstructor
 public class UserController {
+
     private final IUserService userService;
 
     @PostMapping
@@ -23,7 +24,7 @@ public class UserController {
 
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<UserDTO>> updateUser(@PathVariable Long id, @Valid @RequestBody UserDTO userDTO) {
-        return ResponseEntity.ok(ApiResponse.success("Cập nhật người dùng thành công!", userService.updatedUser(id, userDTO)));
+        return ResponseEntity.ok(ApiResponse.success("Cập nhật người dùng thành công!", userService.updateUser(id, userDTO)));
     }
 
     @DeleteMapping("/{id}")
@@ -38,8 +39,11 @@ public class UserController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<UserDTO>>> getAllUsers(@RequestParam(required = false) String typeAccount) {
-        return ResponseEntity.ok(ApiResponse.success("Lấy ra toàn bộ danh sách người dùng thành công!", userService.getAllUsers(typeAccount)));
+    public ResponseEntity<ApiResponse<List<UserDTO>>> getUsers(
+            @RequestParam(name = "type", required = false) String typeAccount,
+            @RequestParam(name = "rank", required = false) String rank) {
+        List<UserDTO> users = userService.getAllUsers(typeAccount, rank);
+        return ResponseEntity.ok(ApiResponse.success("Lấy ra danh sách người dùng thông!", users));
     }
 
 }

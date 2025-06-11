@@ -13,6 +13,7 @@ public class OrderItemDTO {
     private Long id;
     private Long orderId;
     private Long productId;
+    private Long productPriceId;
     private Integer quantity;
     private BigDecimal originalPrice;
 }

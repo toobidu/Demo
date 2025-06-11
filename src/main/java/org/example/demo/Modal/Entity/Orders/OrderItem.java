@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.example.demo.Modal.Entity.Products.Product;
+import org.example.demo.Modal.Entity.Products.ProductPrice;
 
 import java.math.BigDecimal;
 
@@ -26,6 +27,10 @@ public class OrderItem {
     @ManyToOne
     @JoinColumn(name = "product_id")
     private Product product;
+
+    @ManyToOne
+    @JoinColumn(name = "product_price_id")
+    private ProductPrice productPrice;
 
     @Column(name = "quantity")
     private Integer quantity;

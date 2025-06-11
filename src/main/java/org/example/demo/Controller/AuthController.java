@@ -42,7 +42,7 @@ public class AuthController {
     public ResponseEntity<ApiResponse<LoginResponse>> login(@Valid @RequestBody LoginRequest loginRequest) {
         User user = userRepository.findByUserName(loginRequest.getUserName())
                 .orElseThrow(() -> {
-                    log.error("Không tìm thấy người dùng: {}", loginRequest.getUserName());
+                    log.error("User not found: {}", loginRequest.getUserName());
                     return new UserFriendlyException("Không tìm thấy người dùng!");
                 });
         if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPasswordHash())) {
@@ -61,12 +61,12 @@ public class AuthController {
 
         Set<String> permissions = getUserPermissions(user.getId());
         redisService.saveUserPermissions(user.getId(), permissions);
-        log.info("Lưu quyền cho người dùng: {}", user.getId());
+        log.info("Save permissions for userId: {}", user.getId());
 
         LoginResponse response = new LoginResponse();
         response.setAccessToken(accessToken);
         response.setRefreshToken(refreshToken);
-        log.info("Đăng nhập thành công cho người dùng : {}", loginRequest.getUserName());
+        log.info("Login successful for user : {}", loginRequest.getUserName());
         return ResponseEntity.ok(ApiResponse.success("Đăng nhập thành công!", response));
     }
 
@@ -74,18 +74,18 @@ public class AuthController {
     public ResponseEntity<ApiResponse<UserDTO>> register(@Valid @RequestBody RegisterRequest registerRequest) {
 
         if (userRepository.findByUserName(registerRequest.getUserName()).isPresent()) {
-            log.warn("Tên người dùng đã tồn tại: {}", registerRequest.getUserName());
+            log.warn("Username already exists: {}", registerRequest.getUserName());
             return ResponseEntity.badRequest().body(ApiResponse.error("Tên người dùng đã tồn tại!"));
         }
 
         if (userRepository.findByEmail(registerRequest.getEmail()).isPresent()) {
-            log.warn("Email đã tồn tại: {}", registerRequest.getEmail());
+            log.warn("Email already exists: {}", registerRequest.getEmail());
             return ResponseEntity.badRequest().body(ApiResponse.error("Email đã tồn tại!"));
         }
 
         User user = userMapper.toEntity(registerRequest, passwordEncoder);
         user = userRepository.save(user);
-        log.info("Người dùng đăng kí thành công: {}", user.getUserName());
+        log.info("User registered successfully: {}", user.getUserName());
 
         return ResponseEntity.ok(ApiResponse.success("Đăng kí thành công!", userMapper.toDTO(user)));
     }
@@ -96,7 +96,7 @@ public class AuthController {
         log.info("Refresh token");
         Token token = tokenRepository.findByRefreshToken(refreshToken)
                 .orElseThrow(() -> {
-                    log.error("Refresh token không hợp lệ");
+                    log.error("Invalid refresh token: {}", refreshToken);
                     return new UserFriendlyException("Refresh token không hợp lệ");
                 });
         if (token.getExpiresAt().isBefore(LocalDateTime.now())) {
@@ -108,15 +108,15 @@ public class AuthController {
         LoginResponse response = new LoginResponse();
         response.setAccessToken(accessToken);
         response.setRefreshToken(refreshToken);
-        log.info("Refresh token cho người dùng: {}", token.getUser().getId());
+        log.info("Refresh token successful for userId: {}", token.getUser().getId());
         return ResponseEntity.ok(ApiResponse.success("Token đã được refresh", response));
     }
 
     private Set<String> getUserPermissions(Long userId) {
-        log.debug("Fetching quyền cho người dùng: {}", userId);
+        log.debug("Fetching permissions for userId: {}", userId);
         Set<String> permissions = userRepository.findPermissionsByUserId(userId);
         if (permissions.isEmpty()) {
-            log.warn("Không có quyền nào cho người dùng: {} trong database", userId);
+            log.warn("No permissions found for userId: {} trong database", userId);
         }
         return permissions;
     }

@@ -15,13 +15,13 @@ public class RedisConfig {
 
     @Bean
     public RedisConnectionFactory redisConnectionFactory() {
-        log.info("Khởi tạo RedisConnectionFactory cho Redis.");
+        log.info("Creating RedisConnectionFactory.");
         return new LettuceConnectionFactory("redis", 6379);
     }
 
     @Bean
     public RedisTemplate<String, Object> redisTemplate(){
-        log.info("Cấu hình RedisTemplate với các bộ tuần tự hóa.");
+        log.info("Congiuring RedisTemplate.");
         RedisTemplate<String, Object> redisTemplate = new RedisTemplate<>();
         redisTemplate.setConnectionFactory(redisConnectionFactory());
         redisTemplate.setKeySerializer(new StringRedisSerializer());

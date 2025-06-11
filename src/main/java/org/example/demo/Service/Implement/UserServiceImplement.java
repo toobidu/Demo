@@ -5,11 +5,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.demo.Exception.UserFriendlyException;
 import org.example.demo.Mapper.UserMapper;
 import org.example.demo.Modal.DTO.Users.UserDTO;
+import org.example.demo.Modal.Entity.Finance.Wallet;
 import org.example.demo.Modal.Entity.Users.User;
 import org.example.demo.Repository.UserRepository;
+import org.example.demo.Repository.WalletRepository;
 import org.example.demo.Service.Interface.IUserService;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -19,73 +24,125 @@ import java.util.stream.Collectors;
 public class UserServiceImplement implements IUserService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final PasswordEncoder passwordEncoder;
+    private final WalletRepository walletRepository;
 
     @Override
     public UserDTO createUser(UserDTO userDTO) {
-        log.info("Tạo người dùng mới: {}", userDTO.getUserName());
-        User user = userMapper.toEntity(userDTO);
+        log.info("Creating user: {}", userDTO.getUserName());
+        validateUniqueUserName(userDTO.getUserName());
+        validateUniqueEmail(userDTO.getEmail());
+
+        User user = buildNewUserFromDTO(userDTO);
         user = userRepository.save(user);
-        log.info("Người dùng được tạo với id: {}", user.getId());
+
+        createWalletForUser(user);
+
+        log.info("User created with ID: {}", user.getId());
         return userMapper.toDTO(user);
     }
 
     @Override
-    public UserDTO updatedUser(Long id, UserDTO userDTO) {
-        log.info("Cập nhật người dùng với ID: {}", id);
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> {
-                    log.error("Không tìm thấy người dùng: ID {}", id);
-                    return new UserFriendlyException("Không tìm thấy người dùng!");
-                });
-        user.setUserName(userDTO.getUserName());
-        user.setFirstName(userDTO.getFirstName());
-        user.setLastName(userDTO.getLastName());
-        user.setEmail(userDTO.getEmail());
-        user.setAddress(userDTO.getAddress());
-        user.setPhone(userDTO.getPhone());
-        user.setTypeAccount(userDTO.getTypeAccount());
-        user.setRank(userDTO.getRank());
+    public UserDTO updateUser(Long id, UserDTO userDTO) {
+        log.info("Updating user ID: {}", id);
+        User user = findUserById(id);
+        updateUserFields(user, userDTO);
+        user.setUpdatedAt(LocalDateTime.now());
         user = userRepository.save(user);
-        log.info("Cập nhật người dùng: ID {}", id);
+        log.info("User updated: ID {}", id);
         return userMapper.toDTO(user);
     }
 
     @Override
     public void deleteUser(Long id) {
-        log.info("Xóa người dùng với ID: {}", id);
+        log.info("Deleting user ID: {}", id);
+        findUserById(id); // để throw nếu không tồn tại
         userRepository.deleteById(id);
-        log.info("Xóa người dùng thành công: ID {}", id);
+        log.info("User deleted: ID {}", id);
     }
 
     @Override
     public UserDTO getUser(Long id) {
-        log.info("Truy vấn tới người dùng có ID: {}", id);
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> {
-                    log.error("Không tìm thấy người dùng: ID {}", id);
-                    return new UserFriendlyException("Không tìm thấy người dùng!");
-                });
-        log.info("Truy vấn tới người dùng thành công: ID {}", id);
+        log.info("Retrieving user ID: {}", id);
+        User user = findUserById(id);
         return userMapper.toDTO(user);
     }
 
     @Override
     public List<UserDTO> getAllUsers(String typeAccount, String rank) {
         log.info("Retrieving users with typeAccount: {}, rank: {}", typeAccount, rank);
-        List<User> users;
+        List<User> users = filterUsers(typeAccount, rank);
+        return users.stream().map(userMapper::toDTO).collect(Collectors.toList());
+    }
+
+    // Tách nhỏ logic thành các hàm
+
+    private void validateUniqueUserName(String userName) {
+        if (userRepository.findByUserName(userName).isPresent()) {
+            log.error("Username already exists: {}", userName);
+            throw new UserFriendlyException("Username already exists");
+        }
+    }
+
+    private void validateUniqueEmail(String email) {
+        if (userRepository.findByEmail(email).isPresent()) {
+            log.error("Email already exists: {}", email);
+            throw new UserFriendlyException("Email already exists");
+        }
+    }
+
+    private User buildNewUserFromDTO(UserDTO dto) {
+        User user = userMapper.toEntity(dto);
+        user.setPasswordHash(passwordEncoder.encode(dto.getPasswordHash()));
+        user.setCreatedAt(LocalDateTime.now());
+        user.setUpdatedAt(LocalDateTime.now());
+        return user;
+    }
+
+    private void createWalletForUser(User user) {
+        Wallet wallet = new Wallet();
+        wallet.setUser(user);
+        wallet.setBalance(BigDecimal.ZERO);
+        wallet.setCreatedAt(LocalDateTime.now());
+        wallet.setUpdatedAt(LocalDateTime.now());
+        walletRepository.save(wallet);
+    }
+
+    private User findUserById(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> {
+                    log.error("User not found: ID {}", id);
+                    return new UserFriendlyException("User not found");
+                });
+    }
+
+    private void updateUserFields(User user, UserDTO dto) {
+        user.setUserName(dto.getUserName());
+        user.setFirstName(dto.getFirstName());
+        user.setLastName(dto.getLastName());
+        user.setEmail(dto.getEmail());
+        user.setAddress(dto.getAddress());
+        user.setPhone(dto.getPhone());
+        user.setTypeAccount(dto.getTypeAccount());
+        user.setRank(dto.getRank());
+        if (dto.getPasswordHash() != null && !dto.getPasswordHash().isEmpty()) {
+            user.setPasswordHash(passwordEncoder.encode(dto.getPasswordHash()));
+        }
+    }
+
+    private List<User> filterUsers(String typeAccount, String rank) {
         if (typeAccount != null && rank != null) {
-            users = userRepository.findAll().stream()
+            return userRepository.findAll().stream()
                     .filter(u -> u.getTypeAccount().equals(typeAccount) && u.getRank().equals(rank))
                     .collect(Collectors.toList());
         } else if (typeAccount != null) {
-            users = userRepository.findByTypeAccount(typeAccount);
+            return userRepository.findByTypeAccount(typeAccount);
         } else if (rank != null) {
-            users = userRepository.findAll().stream()
+            return userRepository.findAll().stream()
                     .filter(u -> u.getRank().equals(rank))
                     .collect(Collectors.toList());
         } else {
-            users = userRepository.findAll();
+            return userRepository.findAll();
         }
-        return users.stream().map(userMapper::toDTO).collect(Collectors.toList());
     }
 }

@@ -19,69 +19,60 @@ import java.util.stream.Collectors;
 @Slf4j
 @RequiredArgsConstructor
 public class ProductPriceServiceImplement implements IProductPriceService {
+
     private final ProductPriceRepository productPriceRepository;
-    private ProductRepository productRepository;
-    private ProductPriceMapper productPriceMapper;
+    private final ProductRepository productRepository;
+    private final ProductPriceMapper productPriceMapper;
 
     @Override
-    public ProductPriceDTO createProductPrice(ProductPriceDTO productPriceDTO) {
-        log.info("Creating product price for productId: {}, rank: {}, size: {}",
-                productPriceDTO.getProductId(), productPriceDTO.getRank(), productPriceDTO.getSize());
-        Product product = productRepository.findById(productPriceDTO.getProductId())
-                .orElseThrow(() -> {
-                    log.error("Product not found: ID {}", productPriceDTO.getProductId());
-                    return new UserFriendlyException("Product not found");
-                });
-        ProductPrice productPrice = productPriceMapper.toEntity(productPriceDTO);
-        productPrice.setProduct(product);
-        productPrice = productPriceRepository.save(productPrice);
-        log.info("Product price created with ID: {}", productPrice.getId());
-        return productPriceMapper.toDTO(productPrice);
+    public ProductPriceDTO createProductPrice(ProductPriceDTO dto) {
+        log.info("Creating product price - Product ID: {}, Rank: {}, Size: {}",
+                dto.getProductId(), dto.getRank(), dto.getSize());
+
+        Product product = getProductById(dto.getProductId());
+        ProductPrice price = productPriceMapper.toEntity(dto);
+        price.setProduct(product);
+
+        price = productPriceRepository.save(price);
+        log.info("Product price created - ID: {}", price.getId());
+
+        return productPriceMapper.toDTO(price);
     }
 
     @Override
-    public ProductPriceDTO updateProductPrice(Long id, ProductPriceDTO productPriceDTO) {
-        log.info("Updating product price ID: {}", id);
-        ProductPrice productPrice = productPriceRepository.findById(id)
-                .orElseThrow(() -> {
-                    log.error("Product price not found: ID {}", id);
-                    return new UserFriendlyException("Product price not found");
-                });
-        productPrice.setRank(productPriceDTO.getRank());
-        productPrice.setSize(productPriceDTO.getSize());
-        productPrice.setPrice(productPriceDTO.getPrice());
-        productPrice = productPriceRepository.save(productPrice);
-        log.info("Product price updated: ID {}", id);
-        return productPriceMapper.toDTO(productPrice);
+    public ProductPriceDTO updateProductPrice(Long id, ProductPriceDTO dto) {
+        log.info("Updating product price - ID: {}", id);
+
+        ProductPrice price = getProductPriceById(id);
+        price.setRank(dto.getRank());
+        price.setSize(dto.getSize());
+        price.setPrice(dto.getPrice());
+
+        price = productPriceRepository.save(price);
+        log.info("Product price updated - ID: {}", id);
+
+        return productPriceMapper.toDTO(price);
     }
 
     @Override
     public void deleteProductPrice(Long id) {
-        log.info("Deleting product price ID: {}", id);
-        productPriceRepository.findById(id)
-                .orElseThrow(() -> {
-                    log.error("Product price not found: ID {}", id);
-                    return new UserFriendlyException("Product price not found");
-                });
+        log.info("Deleting product price - ID: {}", id);
+        getProductPriceById(id); // Ensure it exists
         productPriceRepository.deleteById(id);
-        log.info("Product price deleted: ID {}", id);
+        log.info("Product price deleted - ID: {}", id);
     }
 
     @Override
     public ProductPriceDTO getProductPrice(Long id) {
-        log.info("Retrieving product price ID: {}", id);
-        ProductPrice productPrice = productPriceRepository.findById(id)
-                .orElseThrow(() -> {
-                    log.error("Product price not found: ID {}", id);
-                    return new UserFriendlyException("Product price not found");
-                });
-        return productPriceMapper.toDTO(productPrice);
+        log.info("Retrieving product price - ID: {}", id);
+        return productPriceMapper.toDTO(getProductPriceById(id));
     }
 
     @Override
     public List<ProductPriceDTO> getProductPrices(Long productId, String rank) {
-        log.info("Retrieving product prices for productId: {}, rank: {}", productId, rank);
+        log.info("Retrieving product prices - Product ID: {}, Rank: {}", productId, rank);
         List<ProductPrice> prices;
+
         if (productId != null && rank != null) {
             prices = productPriceRepository.findByProductIdAndRank(productId, rank);
         } else if (productId != null) {
@@ -89,6 +80,26 @@ public class ProductPriceServiceImplement implements IProductPriceService {
         } else {
             prices = productPriceRepository.findAll();
         }
+
         return prices.stream().map(productPriceMapper::toDTO).collect(Collectors.toList());
     }
+
+    // Tách nhỏ logic
+
+    private Product getProductById(Long id) {
+        return productRepository.findById(id)
+                .orElseThrow(() -> {
+                    log.error("Product not found - ID: {}", id);
+                    return new UserFriendlyException("Product not found");
+                });
+    }
+
+    private ProductPrice getProductPriceById(Long id) {
+        return productPriceRepository.findById(id)
+                .orElseThrow(() -> {
+                    log.error("Product price not found - ID: {}", id);
+                    return new UserFriendlyException("Product price not found");
+                });
+    }
 }
+

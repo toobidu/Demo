@@ -12,13 +12,10 @@ import java.util.Set;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
-    // Tìm user theo userName (dùng cho đăng nhập/đăng ký)
     Optional<User> findByUserName(String userName);
 
-    // Tìm user theo email (dùng để kiểm tra trùng email khi đăng ký)
     Optional<User> findByEmail(String email);
 
-    // Lọc user theo typeAccount (admin, sale, print_house)
     List<User> findByTypeAccount(String typeAccount);
 
     // Lấy danh sách quyền của user dựa trên userId

@@ -18,15 +18,13 @@ import java.util.stream.Collectors;
 @Slf4j
 @RequiredArgsConstructor
 public class ProductServiceImplement implements IProductService {
-    private ProductRepository productRepository;
-    private ProductMapper productMapper;
+    private final ProductRepository productRepository;
+    private final ProductMapper productMapper;
 
     @Override
     public ProductDTO createProduct(ProductDTO productDTO) {
         log.info("Creating product: {}", productDTO.getName());
-        Product product = productMapper.toEntity(productDTO);
-        product.setCreatedAt(LocalDateTime.now());
-        product.setUpdatedAt(LocalDateTime.now());
+        Product product = buildProductFromDTO(productDTO);
         product = productRepository.save(product);
         log.info("Product created with ID: {}", product.getId());
         return productMapper.toDTO(product);
@@ -35,14 +33,8 @@ public class ProductServiceImplement implements IProductService {
     @Override
     public ProductDTO updateProduct(Long id, ProductDTO productDTO) {
         log.info("Updating product ID: {}", id);
-        Product product = productRepository.findById(id)
-                .orElseThrow(() -> {
-                    log.error("Product not found: ID {}", id);
-                    return new UserFriendlyException("Product not found");
-                });
-        product.setName(productDTO.getName());
-        product.setDescription(productDTO.getDescription());
-        product.setBasePrice(productDTO.getBasePrice());
+        Product product = findProductById(id);
+        updateProductFields(product, productDTO);
         product.setUpdatedAt(LocalDateTime.now());
         product = productRepository.save(product);
         log.info("Product updated: ID {}", id);
@@ -52,11 +44,7 @@ public class ProductServiceImplement implements IProductService {
     @Override
     public void deleteProduct(Long id) {
         log.info("Deleting product ID: {}", id);
-        productRepository.findById(id)
-                .orElseThrow(() -> {
-                    log.error("Product not found: ID {}", id);
-                    return new UserFriendlyException("Product not found");
-                });
+        findProductById(id); // để throw nếu không tồn tại
         productRepository.deleteById(id);
         log.info("Product deleted: ID {}", id);
     }
@@ -64,11 +52,7 @@ public class ProductServiceImplement implements IProductService {
     @Override
     public ProductDTO getProduct(Long id) {
         log.info("Retrieving product ID: {}", id);
-        Product product = productRepository.findById(id)
-                .orElseThrow(() -> {
-                    log.error("Product not found: ID {}", id);
-                    return new UserFriendlyException("Product not found");
-                });
+        Product product = findProductById(id);
         return productMapper.toDTO(product);
     }
 
@@ -79,5 +63,28 @@ public class ProductServiceImplement implements IProductService {
                 ? productRepository.findByNameContainingIgnoreCase(name)
                 : productRepository.findAll();
         return products.stream().map(productMapper::toDTO).collect(Collectors.toList());
+    }
+
+    // Chia nhỏ logic
+
+    private Product findProductById(Long id) {
+        return productRepository.findById(id)
+                .orElseThrow(() -> {
+                    log.error("Product not found: ID {}", id);
+                    return new UserFriendlyException("Product not found");
+                });
+    }
+
+    private Product buildProductFromDTO(ProductDTO dto) {
+        Product product = productMapper.toEntity(dto);
+        product.setCreatedAt(LocalDateTime.now());
+        product.setUpdatedAt(LocalDateTime.now());
+        return product;
+    }
+
+    private void updateProductFields(Product product, ProductDTO dto) {
+        product.setName(dto.getName());
+        product.setDescription(dto.getDescription());
+        product.setBasePrice(dto.getBasePrice());
     }
 }

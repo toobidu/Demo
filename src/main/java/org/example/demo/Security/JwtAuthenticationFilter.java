@@ -45,6 +45,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid token");
                 return;
             }
+        } else {
+            log.debug("No Bearer token found, proceeding request");
         }
         filterChain.doFilter(request, response);
     }
@@ -52,15 +54,29 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private String getRequiredPermission(HttpServletRequest request) {
         String path = request.getRequestURI();
         String method = request.getMethod();
-        if (path.startsWith("/api/users")) return "manage_users";
-        if (path.startsWith("/api/products")) return "manage_products";
-        if (path.startsWith("/api/orders/admin")) return "view_all_orders";
-        if (path.startsWith("/api/orders/print-house")) return "view_print_house_orders";
-        if (path.startsWith("/api/orders/user")) return "view_own_orders";
+        if (path.startsWith("/api/users") && method.equals("POST")) return "create_user";
+        if (path.startsWith("/api/users") && method.equals("PUT")) return "update_user";
+        if (path.startsWith("/api/users") && method.equals("DELETE")) return "delete_user";
+        if (path.startsWith("/api/users") && method.equals("GET")) return "manage_users";
+        if (path.startsWith("/api/roles") || path.startsWith("/api/permissions")) return "manage_users";
+        if (path.startsWith("/api/products") && method.equals("POST")) return "create_product";
+        if (path.startsWith("/api/products") && method.equals("PUT")) return "update_product";
+        if (path.startsWith("/api/products") && method.equals("DELETE")) return "delete_product";
+        if (path.startsWith("/api/products") && method.equals("GET")) return "manage_products";
+        if (path.startsWith("/api/product-prices") || path.startsWith("/api/product_attributes")) return "manage_products";
+        if (path.startsWith("/api/orders/admin") && method.equals("GET")) return "view_all_orders";
+        if (path.startsWith("/api/orders/print-house") && method.equals("GET")) return "view_print_house_orders";
+        if (path.startsWith("/api/orders/user") && method.equals("GET")) return "view_own_orders";
         if (path.startsWith("/api/orders") && method.equals("POST")) return "create_order";
         if (path.startsWith("/api/orders") && method.equals("PUT")) return "update_order";
         if (path.startsWith("/api/orders") && method.equals("DELETE")) return "cancel_order";
-        if (path.startsWith("/api/wallets/deposit")) return "manage_users";
+        if (path.startsWith("/api/order-items") && method.equals("POST")) return "create_order_item";
+        if (path.startsWith("/api/order-items") && method.equals("PUT")) return "update_order_item";
+        if (path.startsWith("/api/order-items") && method.equals("DELETE")) return "delete_order_item";
+        if (path.startsWith("/api/order-items") && method.equals("GET")) return "view_order_item";
+        if (path.startsWith("/api/wallets/deposit") && method.equals("POST")) return "manage_wallets";
+        if (path.startsWith("/api/wallets") && method.equals("GET")) return "manage_wallets";
+        if (path.startsWith("/api/dictionaries") || path.startsWith("/api/dictionary_items")) return "manage_users";
         return "";
     }
 }

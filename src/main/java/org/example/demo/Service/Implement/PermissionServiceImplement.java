@@ -17,8 +17,9 @@ import java.util.stream.Collectors;
 @Slf4j
 @RequiredArgsConstructor
 public class PermissionServiceImplement implements IPermissionService {
-    private PermissionRepository permissionRepository;
-    private PermissionMapper permissionMapper;
+
+    private final PermissionRepository permissionRepository;
+    private final PermissionMapper permissionMapper;
 
     @Override
     public PermissionDTO createPermission(PermissionDTO permissionDTO) {
