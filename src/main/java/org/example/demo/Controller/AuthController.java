@@ -47,7 +47,7 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<LoginResponse>> login(@Valid @RequestBody LoginRequest loginRequest) {
         try {
-            log.info("Đăng nhập với username: {}", loginRequest.getUsername());
+            log.info("Login with username: {}", loginRequest.getUsername());
             
             // 1. Tìm người dùng
             User user = userRepository.findByUsername(loginRequest.getUsername())
@@ -58,14 +58,14 @@ public class AuthController {
                     
             // 2. Kiểm tra mật khẩu
             if (user.getPasswordHash() == null || !passwordEncoder.matches(loginRequest.getPassword(), user.getPasswordHash())) {
-                log.warn("Mật khẩu không đúng hoặc chưa có passwordHash cho user: {}", loginRequest.getUsername());
+                log.warn("Password incorrect for user: {}", loginRequest.getUsername());
                 return ResponseEntity.badRequest().body(ApiResponse.error("Thông tin đăng nhập không chính xác!"));
             }
 
             // 3. Tạo token
             String accessToken = jwtUtil.generateAccessToken(user.getId());
             String refreshToken = jwtUtil.generateRefreshToken(user.getId());
-            log.debug("Đã tạo token cho user: {}", loginRequest.getUsername());
+            log.debug("Token generated for user: {}", loginRequest.getUsername());
 
             // 4. Lưu refresh token
             try {
@@ -78,9 +78,9 @@ public class AuthController {
                 token.setCreatedAt(LocalDateTime.now());
                 token.setExpiresAt(LocalDateTime.now().plusSeconds(jwtUtil.getRefreshExpiration() / 1000));
                 tokenRepository.save(token);
-                log.debug("Đã lưu refresh token cho user: {}", loginRequest.getUsername());
+                log.debug("Refresh token saved for user: {}", loginRequest.getUsername());
             } catch (Exception e) {
-                log.error("Lỗi khi lưu refresh token: ", e);
+                log.error("Refresh token save error: ", e);
                 // Tiếp tục xử lý, không throw exception
             }
 
@@ -89,12 +89,12 @@ public class AuthController {
                 Set<String> permissions = getUserPermissions(user.getId());
                 if (permissions != null && !permissions.isEmpty()) {
                     redisService.saveUserPermissions(user.getId(), permissions);
-                    log.info("Đã lưu {} quyền cho userId: {}", permissions.size(), user.getId());
+                    log.info("Saved {} permissions for userId: {}", permissions.size(), user.getId());
                 } else {
-                    log.warn("Không có quyền nào để lưu cho userId: {}", user.getId());
+                    log.warn("No permissions found for userId: {}", user.getId());
                 }
             } catch (Exception e) {
-                log.error("Lỗi khi lưu quyền vào Redis: ", e);
+                log.error("Error saving user permissions: ", e);
                 // Tiếp tục xử lý, không throw exception
             }
 
@@ -102,13 +102,13 @@ public class AuthController {
             LoginResponse response = new LoginResponse();
             response.setAccessToken(accessToken);
             response.setRefreshToken(refreshToken);
-            log.info("Đăng nhập thành công cho user: {}", loginRequest.getUsername());
+            log.info("Login successful for user: {}", loginRequest.getUsername());
             return ResponseEntity.ok(ApiResponse.success("Đăng nhập thành công!", response));
         } catch (UserFriendlyException e) {
-            log.error("Lỗi đăng nhập (user-friendly): {}", e.getMessage());
+            log.error("Error logging in: {}", e.getMessage());
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         } catch (Exception e) {
-            log.error("Lỗi đăng nhập: ", e);
+            log.error("Error logging in: ", e);
             return ResponseEntity.status(500).body(ApiResponse.error("Đã xảy ra lỗi khi đăng nhập, vui lòng thử lại sau!"));
         }
     }
@@ -117,7 +117,7 @@ public class AuthController {
     @Transactional
     public ResponseEntity<ApiResponse<UserDTO>> register(@Valid @RequestBody RegisterRequest registerRequest) {
         try {
-            log.info("Đăng ký với username: {}, email: {}, typeAccount: {}", 
+            log.info("Register with username: {}, email: {}, typeAccount: {}",
                     registerRequest.getUsername(), registerRequest.getEmail(), registerRequest.getTypeAccount());
 
             // Validate input
@@ -131,20 +131,20 @@ public class AuthController {
 
             // Kiểm tra username đã tồn tại
             if (userRepository.findByUsername(registerRequest.getUsername().trim()).isPresent()) {
-                log.warn("Username đã tồn tại: {}", registerRequest.getUsername());
+                log.warn("Username already exists: {}", registerRequest.getUsername());
                 return ResponseEntity.badRequest().body(ApiResponse.error("Tên người dùng đã tồn tại!"));
             }
 
             // Kiểm tra email đã tồn tại
             if (registerRequest.getEmail() != null &&
                     userRepository.findByEmail(registerRequest.getEmail().trim()).isPresent()) {
-                log.warn("Email đã tồn tại: {}", registerRequest.getEmail());
+                log.warn("Email already exists: {}", registerRequest.getEmail());
                 return ResponseEntity.badRequest().body(ApiResponse.error("Email đã tồn tại!"));
             }
 
             // Mã hóa mật khẩu
             String encodedPassword = passwordEncoder.encode(registerRequest.getPassword());
-            log.info("Đã mã hóa mật khẩu cho user: {}", registerRequest.getUsername());
+            log.info("Encoded password: {}", registerRequest.getUsername());
 
             // Tạo user entity
             User user = new User();
@@ -162,7 +162,7 @@ public class AuthController {
 
             // Lưu user
             user = userRepository.save(user);
-            log.info("Đã lưu user với ID: {}", user.getId());
+            log.info("Saved user with ID: {}", user.getId());
 
             // Tạo ví nếu chưa có
             if (!walletRepository.existsByUserId(user.getId())) {
@@ -172,26 +172,23 @@ public class AuthController {
                 wallet.setCreatedAt(LocalDateTime.now());
                 wallet.setUpdatedAt(LocalDateTime.now());
                 walletRepository.save(wallet);
-                log.info("Đã tạo ví cho user ID: {}", user.getId());
+                log.info("Created wallet for user ID: {}", user.getId());
             }
 
             // Tự động gán role dựa trên typeAccount
             assignRoleBasedOnTypeAccount(user);
-            log.info("Đã gán role cho user ID: {}", user.getId());
+            log.info("Assigned role to user ID: {}", user.getId());
 
-            log.info("Đăng ký thành công: {}", user.getUsername());
+            log.info("Registered user: {}", user.getUsername());
             return ResponseEntity.ok(ApiResponse.success("Đăng kí thành công!", userMapper.toDTO(user)));
 
         } catch (Exception e) {
-            log.error("Lỗi đăng ký: ", e);
+            log.error("Error registering: ", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.error("Lỗi đăng ký: " + e.getMessage()));
         }
     }
 
-    /**
-     * Gán role cho user dựa trên typeAccount
-     */
     private void assignRoleBasedOnTypeAccount(User user) {
         try {
             String typeAccount = user.getTypeAccount();
@@ -202,12 +199,12 @@ public class AuthController {
 
             // Chuyển đổi typeAccount thành roleName (thường là viết hoa)
             String roleName = typeAccount.toUpperCase();
-            log.info("Tìm role với roleName: {}", roleName);
+            log.info("Finding role with roleName: {}", roleName);
 
             // Tìm role tương ứng
             Role role = roleRepository.findByRoleName(roleName)
                     .orElseThrow(() -> {
-                        log.error("Không tìm thấy role với tên: {}", roleName);
+                        log.error("Role not found with roleName: {}", roleName);
                         return new UserFriendlyException("Không tìm thấy role tương ứng với typeAccount: " + typeAccount);
                     });
 
@@ -274,13 +271,13 @@ public class AuthController {
             // Tạo token mới
             String newAccessToken = jwtUtil.generateAccessToken(userId);
             String newRefreshToken = jwtUtil.generateRefreshToken(userId);
-            log.info("Đã tạo token mới cho userId: {}", userId);
+            log.info("Generated new access token: {}, new refresh token: {}", userId);
 
             // Cập nhật token trong database
             tokenEntity.setRefreshToken(newRefreshToken);
             tokenEntity.setExpiresAt(LocalDateTime.now().plusSeconds(jwtUtil.getRefreshExpiration() / 1000));
             tokenRepository.save(tokenEntity);
-            log.info("Đã cập nhật refresh token trong database");
+            log.info("Updated refresh token for userId: {}", userId);
 
             // Tạo response
             LoginResponse response = new LoginResponse();
@@ -289,10 +286,10 @@ public class AuthController {
             
             return ResponseEntity.ok(ApiResponse.success("Refresh token thành công", response));
         } catch (UserFriendlyException e) {
-            log.error("Lỗi refresh token (user-friendly): {}", e.getMessage());
+            log.error("Error refreshing token: {}", e.getMessage());
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         } catch (Exception e) {
-            log.error("Lỗi refresh token: ", e);
+            log.error("Error refreshing token: ", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.error("Đã xảy ra lỗi khi refresh token"));
         }
@@ -312,7 +309,7 @@ public class AuthController {
             }
             return permissions;
         } catch (Exception e) {
-            log.error("Lỗi khi lấy quyền cho userId {}: {}", userId, e.getMessage(), e);
+            log.error("Error fetching permissions for userId {}: {}", userId, e.getMessage(), e);
             return new HashSet<>();
         }
     }

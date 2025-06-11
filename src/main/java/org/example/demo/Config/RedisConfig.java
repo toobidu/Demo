@@ -24,11 +24,11 @@ public class RedisConfig {
     @Bean
     public RedisConnectionFactory redisConnectionFactory() {
         try {
-            log.info("Kết nối Redis tới {}:{}", redisHost, redisPort);
+            log.info("Connecting to Redis at {}:{}", redisHost, redisPort);
             RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(redisHost, redisPort);
             return new LettuceConnectionFactory(config);
         } catch (Exception e) {
-            log.error("Lỗi khi tạo Redis connection factory: ", e);
+            log.error("Error connecting to Redis: ", e);
             throw e;
         }
     }
@@ -36,7 +36,7 @@ public class RedisConfig {
     @Bean
     public RedisTemplate<String, Object> redisTemplate() {
         try {
-            log.info("Cấu hình RedisTemplate");
+            log.info("Configuring RedisTemplate");
             RedisTemplate<String, Object> redisTemplate = new RedisTemplate<>();
             redisTemplate.setConnectionFactory(redisConnectionFactory());
             redisTemplate.setKeySerializer(new StringRedisSerializer());
@@ -46,7 +46,7 @@ public class RedisConfig {
             redisTemplate.afterPropertiesSet();
             return redisTemplate;
         } catch (Exception e) {
-            log.error("Lỗi khi cấu hình RedisTemplate: ", e);
+            log.error("Error configuring RedisTemplate: ", e);
             throw e;
         }
     }

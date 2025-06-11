@@ -59,20 +59,17 @@ public class ProductServiceImplement implements IProductService {
     @Override
     public List<ProductDTO> getAllProducts(String name) {
         log.info("Retrieving products with name: {}", name);
-        List<Product> products = name != null && !name.isEmpty()
-                ? productRepository.findByNameContainingIgnoreCase(name)
-                : productRepository.findAll();
+        List<Product> products = name != null && !name.isEmpty() ? productRepository.findByNameContainingIgnoreCase(name) : productRepository.findAll();
         return products.stream().map(productMapper::toDTO).collect(Collectors.toList());
     }
 
     // Chia nhỏ logic
 
     private Product findProductById(Long id) {
-        return productRepository.findById(id)
-                .orElseThrow(() -> {
-                    log.error("Product not found: ID {}", id);
-                    return new UserFriendlyException("Product not found");
-                });
+        return productRepository.findById(id).orElseThrow(() -> {
+            log.error("Product not found: ID {}", id);
+            return new UserFriendlyException("Product not found");
+        });
     }
 
     private Product buildProductFromDTO(ProductDTO dto) {

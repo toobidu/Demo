@@ -53,12 +53,12 @@ public class SecurityConfig {
                 // Xử lý lỗi 401 và 403
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((request, response, authException) -> {
-                            log.error("Unauthorized error: {}", authException.getMessage());
-                            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
+                            log.error("Unauthorized: {}", authException.getMessage());
+                            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Không được phép!");
                         })
                         .accessDeniedHandler((request, response, accessDeniedException) -> {
                             log.error("Access denied: {}", accessDeniedException.getMessage());
-                            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Forbidden");
+                            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Cấm!");
                         })
                 )
 

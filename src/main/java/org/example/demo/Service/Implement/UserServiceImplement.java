@@ -162,9 +162,7 @@ public class UserServiceImplement implements IUserService {
         }
     }
 
-    /**
-     * Gán role cho user dựa trên typeAccount
-     */
+
     private void assignRoleBasedOnTypeAccount(User user) {
         try {
             String typeAccount = user.getTypeAccount();
@@ -173,7 +171,7 @@ public class UserServiceImplement implements IUserService {
                 return;
             }
 
-            // Chuyển đổi typeAccount thành roleName (thường là viết hoa)
+            // Chuyển đổi typeAccount thành roleName
             String roleName = typeAccount.toUpperCase();
             log.info("Tìm role với roleName: {}", roleName);
 
@@ -198,7 +196,7 @@ public class UserServiceImplement implements IUserService {
             log.info("Đã gán role {} cho user ID: {}", roleName, user.getId());
         } catch (Exception e) {
             log.error("Lỗi khi gán role cho user: ", e);
-            throw e; // Re-throw để xử lý ở mức cao hơn
+            throw e;
         }
     }
 }
