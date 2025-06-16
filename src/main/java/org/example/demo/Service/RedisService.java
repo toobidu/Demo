@@ -51,6 +51,11 @@ public class RedisService {
         return null;
     }
 
+    public void deleteUserPermissionsCache(Long userId) {
+        String key = "user:" + userId + ":permissions";
+        redisTemplate.delete(key);
+    }
+
     //Kiểm tra quyền của người dùng
     //Nếu true -> có quyền
     //Nếu false -> không có quyền

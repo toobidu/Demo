@@ -1,15 +1,16 @@
 package org.example.demo.Config;
 
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.example.demo.Security.JwtAuthenticationFilter;
 import org.example.demo.Security.JwtUtil;
 import org.example.demo.Service.CustomerUserService;
 import org.example.demo.Service.RedisService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -18,16 +19,15 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
+@Slf4j
 public class SecurityConfig {
     private final JwtUtil jwtUtil;
     private final RedisService redisService;
     private final CustomerUserService customerUserService;
-    private static final Logger log = LoggerFactory.getLogger(SecurityConfig.class);
 
     public SecurityConfig(JwtUtil jwtUtil, RedisService redisService, CustomerUserService customerUserService) {
         this.jwtUtil = jwtUtil;
@@ -43,10 +43,11 @@ public class SecurityConfig {
                 // Stateless session
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-                // Phân quyền
+                // Phân quyền cơ bản (chi tiết sẽ dùng @PreAuthorize)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/users").permitAll()
+                        .requestMatchers("/api/users").permitAll()
+                        .requestMatchers("/api/role-permissions/**").permitAll()
                         .anyRequest().authenticated()
                 )
 
@@ -77,7 +78,6 @@ public class SecurityConfig {
     // Bean encoder mật khẩu
     @Bean
     public PasswordEncoder passwordEncoder() {
-        // Use consistent strength parameter (default is 10)
         return new BCryptPasswordEncoder(10);
     }
 }

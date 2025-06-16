@@ -1,20 +1,16 @@
 package org.example.demo.Security;
 
-import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.authentication.AbstractAuthenticationToken;
 
-import java.util.Collection;
 import java.util.Collections;
 
-@RequiredArgsConstructor
-public class JwtAuthenticationToken implements Authentication {
+public class JwtAuthenticationToken extends AbstractAuthenticationToken {
     private final Long userId;
-    private boolean authenticated;
 
-    @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.emptyList();
+    public JwtAuthenticationToken(Long userId) {
+        super(Collections.emptyList());
+        this.userId = userId;
+        setAuthenticated(true);
     }
 
     @Override
@@ -23,27 +19,7 @@ public class JwtAuthenticationToken implements Authentication {
     }
 
     @Override
-    public Object getDetails() {
-        return null;
-    }
-
-    @Override
     public Object getPrincipal() {
         return userId;
-    }
-
-    @Override
-    public boolean isAuthenticated() {
-        return authenticated;
-    }
-
-    @Override
-    public void setAuthenticated(boolean isAuthenticated) throws IllegalArgumentException {
-        this.authenticated = isAuthenticated;
-    }
-
-    @Override
-    public String getName() {
-        return userId.toString();
     }
 }

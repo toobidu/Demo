@@ -84,6 +84,12 @@ public class ProductPriceServiceImplement implements IProductPriceService {
         return prices.stream().map(productPriceMapper::toDTO).collect(Collectors.toList());
     }
 
+    @Override
+    public List<ProductPriceDTO> getAllProductPrices() {
+        return getProductPrices(null, null); // gọi lại hàm đã có để tránh lặp code
+    }
+
+
     // Tách nhỏ logic
 
     private Product getProductById(Long id) {

@@ -6,6 +6,7 @@ import org.example.demo.Config.ApiResponse;
 import org.example.demo.Modal.DTO.Users.UserDTO;
 import org.example.demo.Service.Interface.IUserService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,33 +18,37 @@ public class UserController {
 
     private final IUserService userService;
 
+    @GetMapping
+    @PreAuthorize("hasPermission(null, 'view_users')")
+    public ResponseEntity<ApiResponse<List<UserDTO>>> getAllUsers(
+            @RequestParam(required = false) String typeAccount,
+            @RequestParam(required = false) String rank
+    ) {
+        return ResponseEntity.ok(ApiResponse.success("Danh sách người dùng", userService.getAllUsers(typeAccount, rank)));
+    }
+
+    @GetMapping("/{id}")
+    @PreAuthorize("hasPermission(null, 'view_users')")
+    public ResponseEntity<ApiResponse<UserDTO>> getUserById(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success("Thông tin người dùng", userService.getUser(id)));
+    }
+
     @PostMapping
+    @PreAuthorize("hasPermission(null, 'create_user')")
     public ResponseEntity<ApiResponse<UserDTO>> createUser(@Valid @RequestBody UserDTO userDTO) {
         return ResponseEntity.ok(ApiResponse.success("Người dùng được tạo thành công!", userService.createUser(userDTO)));
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasPermission(null, 'update_user')")
     public ResponseEntity<ApiResponse<UserDTO>> updateUser(@PathVariable Long id, @Valid @RequestBody UserDTO userDTO) {
         return ResponseEntity.ok(ApiResponse.success("Cập nhật người dùng thành công!", userService.updateUser(id, userDTO)));
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasPermission(null, 'delete_user')")
     public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
         return ResponseEntity.ok(ApiResponse.success("Xóa người dùng thành công!", null));
     }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<UserDTO>> getUser(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.success("Lấy ra danh sách người dùng thành công!", userService.getUser(id)));
-    }
-
-    @GetMapping
-    public ResponseEntity<ApiResponse<List<UserDTO>>> getUsers(
-            @RequestParam(name = "type", required = false) String typeAccount,
-            @RequestParam(name = "rank", required = false) String rank) {
-        List<UserDTO> users = userService.getAllUsers(typeAccount, rank);
-        return ResponseEntity.ok(ApiResponse.success("Lấy ra danh sách người dùng thông!", users));
-    }
-
 }

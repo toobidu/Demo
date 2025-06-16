@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.List;
 
 @Component
 @Slf4j
@@ -33,11 +34,11 @@ public class JwtUtil {
         }
     }
 
-    public String generateAccessToken(Long userId) {
+    public String generateAccessToken(Long userId, List<String> permissions) {
         try {
-            log.info("Generating access token for userId: {}", userId);
+            log.info("Generating access token for userId: {} with permissions: {}", userId, permissions);
 
-            // Validate inputs
+            // Kiểm tra đầu vào
             if (userId == null) {
                 throw new IllegalArgumentException("UserId cannot be null");
             }
@@ -51,6 +52,7 @@ public class JwtUtil {
                     .subject(userId.toString())
                     .issuedAt(now)
                     .expiration(expiration)
+                    .claim("permissions", permissions)
                     .signWith(getSigningKey())
                     .compact();
 

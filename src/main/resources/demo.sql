@@ -19,7 +19,7 @@ CREATE INDEX idx_users_email ON users (email);
 
 -- Bảng roles (unchanged)
 CREATE TABLE roles (
-                       id          SERIAL PRIMARY KEY,
+                       id          INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
                        role_name   VARCHAR(100) UNIQUE NOT NULL,
                        description TEXT
 );
@@ -28,7 +28,7 @@ CREATE INDEX idx_roles_role_name ON roles (role_name);
 
 -- Bảng permissions (unchanged)
 CREATE TABLE permissions (
-                             id              SERIAL PRIMARY KEY,
+                             id              INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
                              permission_name VARCHAR(100) UNIQUE NOT NULL,
                              description     TEXT
 );
@@ -168,6 +168,13 @@ CREATE TABLE transactions (
 
 CREATE INDEX idx_transactions_from_wallet ON transactions (from_wallet_id);
 CREATE INDEX idx_transactions_to_wallet ON transactions (to_wallet_id);
+
+INSERT INTO roles (role_name, description)
+VALUES
+    ('ADMIN', 'Người quản trị hệ thống, có toàn quyền quản lý.'),
+    ('SALE', 'Nhân viên bán hàng, phụ trách xử lý đơn và chăm sóc khách hàng.'),
+    ('PRINTER_HOUSE', 'Bộ phận in ấn, xử lý và sản xuất tài liệu, đơn hàng in.');
+
 
 -- -- Trigger cập nhật updated_at (updated to include order_items)
 -- CREATE OR REPLACE FUNCTION update_timestamp()

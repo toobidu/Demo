@@ -6,6 +6,7 @@ import org.example.demo.Config.ApiResponse;
 import org.example.demo.Modal.DTO.Orders.OrderDTO;
 import org.example.demo.Service.Interface.IOrderService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,37 +18,44 @@ public class OrderController {
     private final IOrderService orderService;
 
     @PostMapping
+    @PreAuthorize("hasPermission(null, 'create_order')")
     public ResponseEntity<ApiResponse<OrderDTO>> createOrder(@Valid @RequestBody OrderDTO orderDTO) {
         return ResponseEntity.ok(ApiResponse.success("Đơn hàng đã được tạo thành công!", orderService.createOrder(orderDTO)));
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasPermission(null, 'update_order')")
     public ResponseEntity<ApiResponse<OrderDTO>> updateOrder(@PathVariable Long id, @Valid @RequestBody OrderDTO orderDTO) {
         return ResponseEntity.ok(ApiResponse.success("Đơn hàng đã được cập nhật thành công!", orderService.updateOrder(id, orderDTO)));
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasPermission(null, 'cancel_order')")
     public ResponseEntity<ApiResponse<Void>> cancelOrder(@PathVariable Long id) {
         orderService.cancelOrder(id);
         return ResponseEntity.ok(ApiResponse.success("Đơn hàng đã được hủy thành công!", null));
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasPermission(null, 'view_order')")
     public ResponseEntity<ApiResponse<OrderDTO>> getOrder(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success("Truy vấn tới đơn hàng thành công!", orderService.getOrderById(id)));
     }
 
     @GetMapping("/user/{userId}")
+    @PreAuthorize("hasPermission(null, 'view_user_orders')")
     public ResponseEntity<ApiResponse<List<OrderDTO>>> getOrdersForUser(@PathVariable Long userId) {
         return ResponseEntity.ok(ApiResponse.success("Đơn hàng đã được truy vấn thành công tới người dùng!", orderService.getOrdersForUser(userId)));
     }
 
     @GetMapping("/admin")
+    @PreAuthorize("hasPermission(null, 'view_admin_orders')")
     public ResponseEntity<ApiResponse<List<OrderDTO>>> getOrdersForAdmin() {
         return ResponseEntity.ok(ApiResponse.success("Đơn hàng đã được truy vấn thành công tới admin!", orderService.getOrdersForAdmin()));
     }
 
     @GetMapping("/print-house")
+    @PreAuthorize("hasPermission(null, 'view_printhouse_orders')")
     public ResponseEntity<ApiResponse<List<OrderDTO>>> getOrdersForPrintHouse() {
         return ResponseEntity.ok(ApiResponse.success("Đơn hàng đã được truy vấn thành công tới nhà in!", orderService.getOrdersForPrintHouse()));
     }

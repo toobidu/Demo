@@ -79,6 +79,12 @@ public class ProductAttributeImplement implements IProductAttributeService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<ProductAttributeDTO> getAllProductAttributes() {
+        return getProductAttributes(null);
+    }
+
+
     // Tách nhỏ logic
 
     private Product getProductById(Long id) {

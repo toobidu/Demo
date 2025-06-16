@@ -62,8 +62,10 @@ public class AuthController {
                 return ResponseEntity.badRequest().body(ApiResponse.error("Thông tin đăng nhập không chính xác!"));
             }
 
+            Set<String> permissions = getUserPermissions(user.getId());
+            List<String> permissionsList = new ArrayList<>(permissions);
             // 3. Tạo token
-            String accessToken = jwtUtil.generateAccessToken(user.getId());
+            String accessToken = jwtUtil.generateAccessToken(user.getId(), permissionsList);
             String refreshToken = jwtUtil.generateRefreshToken(user.getId());
             log.debug("Token generated for user: {}", loginRequest.getUsername());
 
@@ -86,7 +88,6 @@ public class AuthController {
 
             // 5. Lưu quyền vào Redis - bỏ qua nếu có lỗi
             try {
-                Set<String> permissions = getUserPermissions(user.getId());
                 if (permissions != null && !permissions.isEmpty()) {
                     redisService.saveUserPermissions(user.getId(), permissions);
                     log.info("Saved {} permissions for userId: {}", permissions.size(), user.getId());
@@ -124,29 +125,29 @@ public class AuthController {
             if (registerRequest.getUsername() == null || registerRequest.getUsername().trim().isEmpty()) {
                 return ResponseEntity.badRequest().body(ApiResponse.error("Username không được để trống!"));
             }
-
             if (registerRequest.getPassword() == null || registerRequest.getPassword().trim().isEmpty()) {
                 return ResponseEntity.badRequest().body(ApiResponse.error("Password không được để trống!"));
             }
-
-            // Kiểm tra username đã tồn tại
             if (userRepository.findByUsername(registerRequest.getUsername().trim()).isPresent()) {
                 log.warn("Username already exists: {}", registerRequest.getUsername());
                 return ResponseEntity.badRequest().body(ApiResponse.error("Tên người dùng đã tồn tại!"));
             }
-
-            // Kiểm tra email đã tồn tại
             if (registerRequest.getEmail() != null &&
                     userRepository.findByEmail(registerRequest.getEmail().trim()).isPresent()) {
                 log.warn("Email already exists: {}", registerRequest.getEmail());
                 return ResponseEntity.badRequest().body(ApiResponse.error("Email đã tồn tại!"));
             }
 
-            // Mã hóa mật khẩu
-            String encodedPassword = passwordEncoder.encode(registerRequest.getPassword());
-            log.info("Encoded password: {}", registerRequest.getUsername());
+            // Check if role exists for typeAccount before creating user
+            String typeAccount = registerRequest.getTypeAccount();
+            if (typeAccount == null || typeAccount.isEmpty() ||
+                    roleRepository.findByRoleName(typeAccount.toUpperCase()).isEmpty()) {
+                log.warn("Role not found for typeAccount: {}", typeAccount);
+                return ResponseEntity.badRequest().body(ApiResponse.error("Không tìm thấy role tương ứng với typeAccount!"));
+            }
 
-            // Tạo user entity
+            // Encode password and create user entity
+            String encodedPassword = passwordEncoder.encode(registerRequest.getPassword());
             User user = new User();
             user.setUsername(registerRequest.getUsername().trim());
             user.setFirstName(registerRequest.getFirstName());
@@ -154,17 +155,17 @@ public class AuthController {
             user.setEmail(registerRequest.getEmail() != null ? registerRequest.getEmail().trim() : null);
             user.setAddress(registerRequest.getAddress());
             user.setPhone(registerRequest.getPhone());
-            user.setTypeAccount(registerRequest.getTypeAccount());
-            user.setRank("BRONZE"); // Rank mặc định
+            user.setTypeAccount(typeAccount);
+            user.setRank("BRONZE");
             user.setPasswordHash(encodedPassword);
             user.setCreatedAt(LocalDateTime.now());
             user.setUpdatedAt(LocalDateTime.now());
 
-            // Lưu user
+            // Save user
             user = userRepository.save(user);
             log.info("Saved user with ID: {}", user.getId());
 
-            // Tạo ví nếu chưa có
+            // Create wallet if not exists
             if (!walletRepository.existsByUserId(user.getId())) {
                 Wallet wallet = new Wallet();
                 wallet.setUser(user);
@@ -175,7 +176,7 @@ public class AuthController {
                 log.info("Created wallet for user ID: {}", user.getId());
             }
 
-            // Tự động gán role dựa trên typeAccount
+            // Assign role
             assignRoleBasedOnTypeAccount(user);
             log.info("Assigned role to user ID: {}", user.getId());
 
@@ -269,7 +270,7 @@ public class AuthController {
             }
 
             // Tạo token mới
-            String newAccessToken = jwtUtil.generateAccessToken(userId);
+            String newAccessToken = jwtUtil.generateAccessToken(userId, (List<String>) getUserPermissions(userId));
             String newRefreshToken = jwtUtil.generateRefreshToken(userId);
             log.info("Generated new access token: {}, new refresh token: {}", userId);
 

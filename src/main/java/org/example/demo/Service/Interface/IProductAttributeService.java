@@ -14,4 +14,7 @@ public interface IProductAttributeService {
     ProductAttributeDTO getProductAttribute(Long id);
 
     List<ProductAttributeDTO> getProductAttributes(Long productId);
+
+    List<ProductAttributeDTO> getAllProductAttributes();
+
 }
