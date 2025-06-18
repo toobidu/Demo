@@ -14,7 +14,9 @@ import org.example.demo.Service.RedisService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -37,10 +39,11 @@ public class RolePermissionServiceImplement implements IRolePermissionService {
         rolePermission.setPermission(permission);
         rolePermissionRepository.save(rolePermission);
 
+        String permissionName = permission.getPermissionName();
         var userIds = userRoleRepository.findUserIdsByRoleId(roleId);
         if (userIds != null) {
             for (Long userId : userIds) {
-                redisService.deleteUserPermissionsCache(userId);
+                redisService.addPermissions(userId, Set.of(permissionName)); // THÊM QUYỀN CỤ THỂ
             }
         }
     }
@@ -51,10 +54,13 @@ public class RolePermissionServiceImplement implements IRolePermissionService {
         RolePermissionId id = new RolePermissionId(roleId, permissionId);
         rolePermissionRepository.deleteById(id);
 
+        Permission permission = permissionRepository.findById(permissionId).orElseThrow();
+        String permissionName = permission.getPermissionName();
+
         var userIds = userRoleRepository.findUserIdsByRoleId(roleId);
         if (userIds != null) {
             for (Long userId : userIds) {
-                redisService.deleteUserPermissionsCache(userId);
+                redisService.removePermissions(userId, Set.of(permissionName)); // XÓA QUYỀN CỤ THỂ
             }
         }
     }
@@ -63,6 +69,8 @@ public class RolePermissionServiceImplement implements IRolePermissionService {
     @Transactional
     public void addMorePermissionsToRole(Long roleId, List<Long> permissionIds) {
         Role role = roleRepository.findById(roleId).orElseThrow();
+        Set<String> permissionsToAdd = new HashSet<>();
+
         for (Long permissionId : permissionIds) {
             Permission permission = permissionRepository.findById(permissionId).orElseThrow();
             RolePermissionId id = new RolePermissionId(roleId, permissionId);
@@ -73,11 +81,13 @@ public class RolePermissionServiceImplement implements IRolePermissionService {
                 rolePermission.setPermission(permission);
                 rolePermissionRepository.save(rolePermission);
             }
+            permissionsToAdd.add(permission.getPermissionName());
         }
+
         var userIds = userRoleRepository.findUserIdsByRoleId(roleId);
-        if (userIds != null) {
+        if (userIds != null && !permissionsToAdd.isEmpty()) {
             for (Long userId : userIds) {
-                redisService.deleteUserPermissionsCache(userId);
+                redisService.addPermissions(userId, permissionsToAdd);
             }
         }
     }
@@ -85,14 +95,18 @@ public class RolePermissionServiceImplement implements IRolePermissionService {
     @Override
     @Transactional
     public void removeMorePermissionsFromRole(Long roleId, List<Long> permissionIds) {
+        Set<String> permissionsToRemove = new HashSet<>();
         for (Long permissionId : permissionIds) {
+            Permission permission = permissionRepository.findById(permissionId).orElseThrow();
             RolePermissionId id = new RolePermissionId(roleId, permissionId);
             rolePermissionRepository.deleteById(id);
+            permissionsToRemove.add(permission.getPermissionName());
         }
+
         var userIds = userRoleRepository.findUserIdsByRoleId(roleId);
-        if (userIds != null) {
+        if (userIds != null && !permissionsToRemove.isEmpty()) {
             for (Long userId : userIds) {
-                redisService.deleteUserPermissionsCache(userId);
+                redisService.removePermissions(userId, permissionsToRemove);
             }
         }
     }

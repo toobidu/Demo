@@ -57,15 +57,18 @@ public class AuthServiceImplement implements IAuthService {
             return ResponseEntity.badRequest().body(ApiResponse.error("Thông tin đăng nhập không chính xác!"));
         }
 
+        // ✅ Lấy quyền từ DB và lưu vào Redis
         Set<String> permissions = getUserPermissions(user.getId());
-        List<String> permissionsList = new ArrayList<>(permissions);
-
-        String accessToken = jwtUtil.generateAccessToken(user.getId(), permissionsList, user.getTypeAccount(), user.getRank());
-        String refreshToken = jwtUtil.generateRefreshToken(user.getId());
-
-        saveRefreshToken(user, refreshToken);
         saveUserPermissionsToRedis(user.getId(), permissions);
 
+        // ❌ Không còn đưa quyền vào token
+        String accessToken = jwtUtil.generateAccessToken(user.getId(), user.getTypeAccount(), user.getRank());
+        String refreshToken = jwtUtil.generateRefreshToken(user.getId());
+
+        // ✅ Lưu refresh token vào DB
+        saveRefreshToken(user, refreshToken);
+
+        // ✅ Tạo response trả về client
         LoginResponse response = new LoginResponse();
         response.setAccessToken(accessToken);
         response.setRefreshToken(refreshToken);
@@ -109,7 +112,6 @@ public class AuthServiceImplement implements IAuthService {
         user.setPasswordHash(encodedPassword);
         user.setTypeAccount(registerRequest.getTypeAccount());
         user.setRank("BRONZE");
-        user.setPasswordHash(encodedPassword);
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
 
@@ -202,7 +204,11 @@ public class AuthServiceImplement implements IAuthService {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.error("Không tìm thấy người dùng"));
         }
 
-        String newAccessToken = jwtUtil.generateAccessToken(userId, new ArrayList<>(getUserPermissions(userId)), user.getTypeAccount(), user.getRank());
+        // ✅ Lấy quyền mới nhất từ DB và tạo token mới
+        Set<String> permissions = getUserPermissions(userId);
+        saveUserPermissionsToRedis(userId, permissions); // Cập nhật Redis nếu cần
+
+        String newAccessToken = jwtUtil.generateAccessToken(userId, user.getTypeAccount(), user.getRank());
         String newRefreshToken = jwtUtil.generateRefreshToken(userId);
 
         tokenEntity.setRefreshToken(newRefreshToken);

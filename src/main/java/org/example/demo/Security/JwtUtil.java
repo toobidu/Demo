@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @RequiredArgsConstructor
 public class JwtUtil {
+
     private final JwtConfig jwtConfig;
 
     private SecretKey getSigningKey() {
@@ -39,12 +40,13 @@ public class JwtUtil {
         }
     }
 
-
-    public String generateAccessToken(Long userId, List<String> permissions, String typeAccount, String rank) {
+    /**
+     * Tạo access token không chứa permissions → để phân quyền động qua Redis
+     */
+    public String generateAccessToken(Long userId, String typeAccount, String rank) {
         try {
-            log.info("Generating access token for userId: {} with permissions: {}", userId, permissions);
+            log.info("Generating access token for userId: {}", userId);
 
-            // Kiểm tra đầu vào
             if (userId == null) {
                 throw new IllegalArgumentException("UserId cannot be null");
             }
@@ -58,7 +60,6 @@ public class JwtUtil {
                     .subject(userId.toString())
                     .issuedAt(now)
                     .expiration(expiration)
-                    .claim("permissions", permissions)
                     .claim("typeAccount", typeAccount)
                     .claim("rank", rank)
                     .signWith(getSigningKey())
@@ -76,7 +77,6 @@ public class JwtUtil {
         try {
             log.info("Generating refresh token for userId: {}", userId);
 
-            // Validate inputs
             if (userId == null) {
                 throw new IllegalArgumentException("UserId cannot be null");
             }
@@ -150,42 +150,6 @@ public class JwtUtil {
         }
     }
 
-    public List<String> getPermissionsFromToken(String token) {
-        try {
-            Claims claims = Jwts.parser()
-                    .verifyWith(getSigningKey())
-                    .build()
-                    .parseSignedClaims(token)
-                    .getPayload();
-
-            Object rawPermissions = claims.get("permissions");
-
-            if (rawPermissions == null) {
-                log.warn("Permissions claim is null");
-                return Collections.emptyList();
-            }
-            // Nếu là List<?> (bình thường)
-            if (rawPermissions instanceof List<?> list) {
-                return list.stream().map(Object::toString).collect(Collectors.toList());
-            }
-            // Nếu là String (bị serialize sai)
-            if (rawPermissions instanceof String str) {
-                // Có thể là chuỗi JSON, thử tách bằng dấu phẩy
-                if (str.startsWith("[") && str.endsWith("]")) {
-                    str = str.substring(1, str.length() - 1); // bỏ []
-                }
-                if (!str.isBlank()) {
-                    return List.of(str.split(",")).stream().map(String::trim).collect(Collectors.toList());
-                }
-            }
-            log.warn("Permissions claim is not a List or String: {}", rawPermissions.getClass());
-            return Collections.emptyList();
-        } catch (Exception e) {
-            log.error("Failed to parse permissions from token", e);
-            return Collections.emptyList();
-        }
-    }
-
     public Map<String, Object> getAllClaimsFromToken(String token) {
         try {
             return Jwts.parser()
@@ -199,6 +163,15 @@ public class JwtUtil {
         }
     }
 
+    public String getTypeAccountFromToken(String token) {
+        Map<String, Object> claims = getAllClaimsFromToken(token);
+        return (String) claims.get("typeAccount");
+    }
+
+    public String getRankFromToken(String token) {
+        Map<String, Object> claims = getAllClaimsFromToken(token);
+        return (String) claims.get("rank");
+    }
 
     public long getRefreshExpiration() {
         return jwtConfig.getRefreshExpiration();

@@ -17,10 +17,10 @@ public class RedisService {
 
     private final RedisTemplate<String, Object> redisTemplate;
 
-    // Lưu quyền người dùng vào Redis
+    // Ghi đè toàn bộ quyền (load từ DB)
     public void saveUserPermissions(Long userId, Set<String> permissions) {
         String key = "user:" + userId + ":permissions";
-        log.info("Saving permissions for userId: {} into Redis", key);
+        log.info("Saving {} permissions for userId: {}", permissions.size(), userId);
 
         try {
             redisTemplate.delete(key); // Xóa cũ nếu có
@@ -28,57 +28,76 @@ public class RedisService {
             if (permissions != null && !permissions.isEmpty()) {
                 permissions.forEach(p -> redisTemplate.opsForSet().add(key, p));
                 redisTemplate.expire(key, 24, TimeUnit.HOURS);
-                log.info("Saved {} permissions for userId: {}", permissions.size(), userId);
+                log.info("Saved permissions successfully");
             }
         } catch (Exception e) {
-            log.error("Lỗi khi lưu quyền vào Redis", e);
+            log.error("Error saving permissions to Redis", e);
         }
     }
 
-    // Lấy danh sách quyền từ Redis
-    public Set<String> getUserPermissions(Long userId) {
+    // Thêm một hoặc nhiều quyền
+    public void addPermissions(Long userId, Set<String> newPermissions) {
         String key = "user:" + userId + ":permissions";
-        log.debug("Retrieving permissions for userId: {}", userId);
+        log.info("Adding {} permissions for userId: {}", newPermissions.size(), userId);
 
         try {
-            Set<Object> redisData = redisTemplate.opsForSet().members(key);
-            if (redisData == null || redisData.isEmpty()) {
-                log.warn("Cannot find permissions for userId: {}", userId);
-                return Collections.emptySet();
+            if (newPermissions != null && !newPermissions.isEmpty()) {
+                newPermissions.forEach(p -> redisTemplate.opsForSet().add(key, p));
+                redisTemplate.expire(key, 24, TimeUnit.HOURS);
+                log.info("Successfully added permissions");
             }
+        } catch (Exception e) {
+            log.error("Error adding permissions", e);
+        }
+    }
 
-            Set<String> permissions = redisData.stream()
+    // Xóa một hoặc nhiều quyền
+    public void removePermissions(Long userId, Set<String> permissionsToRemove) {
+        String key = "user:" + userId + ":permissions";
+        log.info("Removing {} permissions for userId: {}", permissionsToRemove.size(), userId);
+
+        try {
+            if (permissionsToRemove != null && !permissionsToRemove.isEmpty()) {
+                redisTemplate.opsForSet().remove(key, permissionsToRemove.toArray());
+                log.info("Successfully removed permissions");
+            }
+        } catch (Exception e) {
+            log.error("Error removing permissions", e);
+        }
+    }
+
+    // Lấy tất cả quyền từ Redis
+    public Set<String> getUserPermissions(Long userId) {
+        String key = "user:" + userId + ":permissions";
+        try {
+            Set<Object> data = redisTemplate.opsForSet().members(key);
+            if (data == null || data.isEmpty()) return Collections.emptySet();
+
+            return data.stream()
                     .map(Object::toString)
                     .collect(Collectors.toSet());
-
-            log.debug("Found {} permissions for userId: {}", permissions.size(), userId);
-            return permissions;
         } catch (Exception e) {
-            log.error("Error retrieving permissions from Redis", e);
+            log.error("Error getting permissions from Redis", e);
             return Collections.emptySet();
         }
     }
 
-    // Kiểm tra xem người dùng có một quyền cụ thể không
+    // Kiểm tra một quyền cụ thể
     public boolean hasPermission(Long userId, String permission) {
         String key = "user:" + userId + ":permissions";
-        log.debug("Checking if userId: {} has permission: {}", userId, permission);
-
         try {
             Boolean isMember = redisTemplate.opsForSet().isMember(key, permission);
-            boolean result = Boolean.TRUE.equals(isMember);
-            log.debug("Result for userId: {}, permission: {} is: {}", userId, permission, result);
-            return result;
+            return Boolean.TRUE.equals(isMember);
         } catch (Exception e) {
             log.error("Error checking permission", e);
             return false;
         }
     }
 
-    // Xóa cache quyền người dùng
-    public void deleteUserPermissionsCache(Long userId) {
-        String key = "user:" + userId + ":permissions";
-        redisTemplate.delete(key);
-        log.info("Deleted permissions cache for userId: {}", userId);
-    }
+//    // Xóa cache quyền người dùng
+//    public void deleteUserPermissionsCache(Long userId) {
+//        String key = "user:" + userId + ":permissions";
+//        redisTemplate.delete(key);
+//        log.info("Deleted permissions cache for userId: {}", userId);
+//    }
 }
