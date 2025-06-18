@@ -84,12 +84,13 @@ public class UserServiceImplement implements IUserService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<UserDTO> getAllUsers(String typeAccount, String rank) {
-        log.info("Retrieving users with typeAccount: {}, rank: {}", typeAccount, rank);
-        List<User> users = filterUsers(typeAccount, rank);
-        return users.stream().map(userMapper::toDTO).collect(Collectors.toList());
+        return userRepository.findAllWithFilters(typeAccount, rank)
+                .stream()
+                .map(userMapper::toDTO)
+                .collect(Collectors.toList());
     }
-
     // Helper methods
 
     private void validateUniqueUserName(String userName) {
@@ -147,20 +148,17 @@ public class UserServiceImplement implements IUserService {
     }
 
     private List<User> filterUsers(String typeAccount, String rank) {
-        if (typeAccount != null && rank != null) {
-            return userRepository.findAll().stream()
-                    .filter(u -> u.getTypeAccount().equals(typeAccount) && u.getRank().equals(rank))
-                    .collect(Collectors.toList());
-        } else if (typeAccount != null) {
-            return userRepository.findByTypeAccount(typeAccount);
-        } else if (rank != null) {
-            return userRepository.findAll().stream()
-                    .filter(u -> u.getRank().equals(rank))
-                    .collect(Collectors.toList());
-        } else {
-            return userRepository.findAll();
-        }
+        return userRepository.findAll().stream()
+                .filter(u -> safeEquals(u.getTypeAccount(), typeAccount) || typeAccount == null)
+                .filter(u -> safeEquals(u.getRank(), rank) || rank == null)
+                .collect(Collectors.toList());
     }
+
+    // Helper để so sánh null-safe
+    private boolean safeEquals(String a, String b) {
+        return a != null && a.equals(b);
+    }
+
 
 
     private void assignRoleBasedOnTypeAccount(User user) {

@@ -27,6 +27,6 @@ public class RolePermissionId implements Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash();
+        return Objects.hash(roleId, permissionId);
     }
 }

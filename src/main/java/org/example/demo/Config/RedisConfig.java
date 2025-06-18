@@ -21,14 +21,22 @@ public class RedisConfig {
     @Value("${spring.data.redis.port}")
     private int redisPort;
 
+    @Value("${spring.data.redis.password}")
+    private String redisPassword;
+
     @Bean
     public RedisConnectionFactory redisConnectionFactory() {
         try {
-            log.info("Connecting to Redis at {}:{}", redisHost, redisPort);
+            log.info("Configuring Redis connection to {}:{}", redisHost, redisPort);
             RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(redisHost, redisPort);
-            return new LettuceConnectionFactory(config);
+            config.setPassword(redisPassword);
+
+            LettuceConnectionFactory factory = new LettuceConnectionFactory(config);
+            factory.afterPropertiesSet();
+            log.info("Redis connection factory created successfully");
+            return factory;
         } catch (Exception e) {
-            log.error("Error connecting to Redis: ", e);
+            log.error("Failed to create Redis connection factory: ", e);
             throw e;
         }
     }
@@ -36,17 +44,20 @@ public class RedisConfig {
     @Bean
     public RedisTemplate<String, Object> redisTemplate() {
         try {
-            log.info("Configuring RedisTemplate");
-            RedisTemplate<String, Object> redisTemplate = new RedisTemplate<>();
-            redisTemplate.setConnectionFactory(redisConnectionFactory());
-            redisTemplate.setKeySerializer(new StringRedisSerializer());
-            redisTemplate.setValueSerializer(new GenericJackson2JsonRedisSerializer());
-            redisTemplate.setHashKeySerializer(new StringRedisSerializer());
-            redisTemplate.setHashValueSerializer(new GenericJackson2JsonRedisSerializer());
-            redisTemplate.afterPropertiesSet();
-            return redisTemplate;
+            RedisTemplate<String, Object> template = new RedisTemplate<>();
+            template.setConnectionFactory(redisConnectionFactory());
+
+            // Configure serializers
+            template.setKeySerializer(new StringRedisSerializer());
+            template.setHashKeySerializer(new StringRedisSerializer());
+            template.setHashValueSerializer(new GenericJackson2JsonRedisSerializer());
+            template.setValueSerializer(new GenericJackson2JsonRedisSerializer());
+
+            template.afterPropertiesSet();
+            log.info("Redis template configured successfully");
+            return template;
         } catch (Exception e) {
-            log.error("Error configuring RedisTemplate: ", e);
+            log.error("Failed to configure Redis template: ", e);
             throw e;
         }
     }

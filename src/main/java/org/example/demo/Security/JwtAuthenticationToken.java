@@ -1,21 +1,24 @@
 package org.example.demo.Security;
 
 import org.springframework.security.authentication.AbstractAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
 
+import java.util.Collection;
 import java.util.Collections;
 
 public class JwtAuthenticationToken extends AbstractAuthenticationToken {
+
     private final Long userId;
 
-    public JwtAuthenticationToken(Long userId) {
-        super(Collections.emptyList());
+    public JwtAuthenticationToken(Long userId, Collection<? extends GrantedAuthority> authorities) {
+        super(authorities);
         this.userId = userId;
-        setAuthenticated(true);
+        setAuthenticated(true); // Đánh dấu là đã xác thực
     }
 
     @Override
     public Object getCredentials() {
-        return null;
+        return null; // Không có credentials với JWT
     }
 
     @Override

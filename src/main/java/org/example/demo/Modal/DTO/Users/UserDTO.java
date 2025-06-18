@@ -24,7 +24,6 @@ public class UserDTO {
     private String passwordHash;
     private String typeAccount;
     private String rank;
-    private List<RoleDTO> roles;
     private List<WalletDTO> wallets;
     private List<PermissionDTO> permissions;
     private List<OrderDTO> orders;

@@ -1,6 +1,8 @@
 package org.example.demo.Security;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,8 +12,11 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Component
 @Slf4j
@@ -22,11 +27,11 @@ public class JwtUtil {
     private SecretKey getSigningKey() {
         try {
             String secret = jwtConfig.getSecret();
-            log.debug("JWT Secret length: {}", secret != null ? secret.length() : "NULL");
+            log.debug("JWT Secret (raw UTF-8): {}", secret);
 
-            // Sử dụng secret key trực tiếp
             byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
-            log.debug("Using raw string secret, length: {} bytes", keyBytes.length);
+            log.debug("UTF-8 key length (bytes): {}", keyBytes.length);
+
             return Keys.hmacShaKeyFor(keyBytes);
         } catch (Exception e) {
             log.error("Error creating signing key: ", e);
@@ -34,7 +39,8 @@ public class JwtUtil {
         }
     }
 
-    public String generateAccessToken(Long userId, List<String> permissions) {
+
+    public String generateAccessToken(Long userId, List<String> permissions, String typeAccount, String rank) {
         try {
             log.info("Generating access token for userId: {} with permissions: {}", userId, permissions);
 
@@ -53,6 +59,8 @@ public class JwtUtil {
                     .issuedAt(now)
                     .expiration(expiration)
                     .claim("permissions", permissions)
+                    .claim("typeAccount", typeAccount)
+                    .claim("rank", rank)
                     .signWith(getSigningKey())
                     .compact();
 
@@ -82,7 +90,7 @@ public class JwtUtil {
                     .subject(userId.toString())
                     .issuedAt(now)
                     .expiration(expiration)
-                    .signWith(getSigningKey())
+                    .signWith(getSigningKey(), SignatureAlgorithm.HS384)
                     .compact();
 
             log.info("Refresh token generated successfully for userId: {}", userId);
@@ -141,6 +149,56 @@ public class JwtUtil {
             return false;
         }
     }
+
+    public List<String> getPermissionsFromToken(String token) {
+        try {
+            Claims claims = Jwts.parser()
+                    .verifyWith(getSigningKey())
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+
+            Object rawPermissions = claims.get("permissions");
+
+            if (rawPermissions == null) {
+                log.warn("Permissions claim is null");
+                return Collections.emptyList();
+            }
+            // Nếu là List<?> (bình thường)
+            if (rawPermissions instanceof List<?> list) {
+                return list.stream().map(Object::toString).collect(Collectors.toList());
+            }
+            // Nếu là String (bị serialize sai)
+            if (rawPermissions instanceof String str) {
+                // Có thể là chuỗi JSON, thử tách bằng dấu phẩy
+                if (str.startsWith("[") && str.endsWith("]")) {
+                    str = str.substring(1, str.length() - 1); // bỏ []
+                }
+                if (!str.isBlank()) {
+                    return List.of(str.split(",")).stream().map(String::trim).collect(Collectors.toList());
+                }
+            }
+            log.warn("Permissions claim is not a List or String: {}", rawPermissions.getClass());
+            return Collections.emptyList();
+        } catch (Exception e) {
+            log.error("Failed to parse permissions from token", e);
+            return Collections.emptyList();
+        }
+    }
+
+    public Map<String, Object> getAllClaimsFromToken(String token) {
+        try {
+            return Jwts.parser()
+                    .verifyWith(getSigningKey())
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+        } catch (Exception e) {
+            log.error("Lỗi khi lấy claims từ AccessToken: ", e);
+            throw new UserFriendlyException("Token không hợp lệ");
+        }
+    }
+
 
     public long getRefreshExpiration() {
         return jwtConfig.getRefreshExpiration();

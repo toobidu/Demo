@@ -1,6 +1,5 @@
 package org.example.demo.Config;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler;
@@ -11,16 +10,16 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 @EnableMethodSecurity
 public class MethodSecurityConfig {
 
-    private final CustomPermissionEvaluator permissionEvaluator;
+    private final CustomPermissionEvaluator customPermissionEvaluator;
 
-    public MethodSecurityConfig(CustomPermissionEvaluator permissionEvaluator) {
-        this.permissionEvaluator = permissionEvaluator;
+    public MethodSecurityConfig(CustomPermissionEvaluator customPermissionEvaluator) {
+        this.customPermissionEvaluator = customPermissionEvaluator;
     }
 
     @Bean
     public MethodSecurityExpressionHandler methodSecurityExpressionHandler() {
-        DefaultMethodSecurityExpressionHandler expressionHandler = new DefaultMethodSecurityExpressionHandler();
-        expressionHandler.setPermissionEvaluator(permissionEvaluator);
-        return expressionHandler;
+        DefaultMethodSecurityExpressionHandler handler = new DefaultMethodSecurityExpressionHandler();
+        handler.setPermissionEvaluator(customPermissionEvaluator);
+        return handler;
     }
 }

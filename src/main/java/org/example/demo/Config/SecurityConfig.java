@@ -25,59 +25,42 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableMethodSecurity
 @Slf4j
 public class SecurityConfig {
+
     private final JwtUtil jwtUtil;
     private final RedisService redisService;
-    private final CustomerUserService customerUserService;
 
-    public SecurityConfig(JwtUtil jwtUtil, RedisService redisService, CustomerUserService customerUserService) {
+    public SecurityConfig(JwtUtil jwtUtil, RedisService redisService) {
         this.jwtUtil = jwtUtil;
         this.redisService = redisService;
-        this.customerUserService = customerUserService;
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
-
-                // Stateless session
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-
-                // Phân quyền cơ bản (chi tiết sẽ dùng @PreAuthorize)
+                .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/users").permitAll()
-                        .requestMatchers("/api/role-permissions/**").permitAll()
+                        .requestMatchers("/api/auth/**", "/swagger-ui/**", "/v3/api-docs/**", "/error").permitAll()
                         .anyRequest().authenticated()
                 )
-
-                // Xử lý lỗi 401 và 403
                 .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint((request, response, authException) -> {
-                            log.error("Unauthorized: {}", authException.getMessage());
-                            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Không được phép!");
+                        .authenticationEntryPoint((req, res, e) -> {
+                            log.error("Unauthorized: {}", e.getMessage());
+                            res.sendError(HttpServletResponse.SC_UNAUTHORIZED);
                         })
-                        .accessDeniedHandler((request, response, accessDeniedException) -> {
-                            log.error("Access denied: {}", accessDeniedException.getMessage());
-                            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Cấm!");
+                        .accessDeniedHandler((req, res, e) -> {
+                            log.error("Access Denied: {}", e.getMessage());
+                            res.sendError(HttpServletResponse.SC_FORBIDDEN);
                         })
                 )
-
-                // Gắn JWT filter trước UsernamePasswordAuthenticationFilter
                 .addFilterBefore(new JwtAuthenticationFilter(jwtUtil, redisService), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
-    // Cấu hình authentication manager
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
-        return config.getAuthenticationManager();
-    }
-
-    // Bean encoder mật khẩu
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(10);
+        return new BCryptPasswordEncoder();
     }
 }
+

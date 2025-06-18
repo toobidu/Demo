@@ -1,6 +1,5 @@
 package org.example.demo.Service.Interface;
 
-import org.example.demo.Modal.DTO.Authentication.RegisterRequest;
 import org.example.demo.Modal.DTO.Users.UserDTO;
 
 import java.util.List;

@@ -18,9 +18,11 @@ services:
     container_name: redis
     ports:
       - "6379:6379"
+    command: redis-server --requirepass demo
+    environment:
+      - REDIS_PASSWORD=demo
     volumes:
       - redis_data:/data
-    command: [ "redis-server", "--requirepass", "demo" ]
     restart: always
 
 volumes:
