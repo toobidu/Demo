@@ -46,8 +46,7 @@ public class WalletServiceImplement implements IWalletService {
         transaction.setCreatedAt(LocalDateTime.now());
         transactionRepository.save(transaction); // assume DB trigger updates balance
 
-        wallet = walletRepository.findByUserId(userId)
-                .orElseThrow(() -> new UserFriendlyException("Wallet not found after deposit"));
+        wallet = walletRepository.findByUserId(userId).orElseThrow(() -> new UserFriendlyException("Wallet not found after deposit"));
 
         log.info("Deposit successful for userId: {}, new balance: {}", userId, wallet.getBalance());
         return walletMapper.toDTO(wallet);
@@ -62,13 +61,11 @@ public class WalletServiceImplement implements IWalletService {
     // Tách nhỏ logic
 
     private Wallet getWalletByUserId(Long userId) {
-        return walletRepository.findByUserId(userId)
-                .orElseThrow(() -> new UserFriendlyException("Wallet not found for userId: " + userId));
+        return walletRepository.findByUserId(userId).orElseThrow(() -> new UserFriendlyException("Wallet not found for userId: " + userId));
     }
 
     private User getAdminById(Long adminId) {
-        User admin = userRepository.findById(adminId)
-                .orElseThrow(() -> new UserFriendlyException("Admin not found: ID " + adminId));
+        User admin = userRepository.findById(adminId).orElseThrow(() -> new UserFriendlyException("Admin not found: ID " + adminId));
         if (!"admin".equals(admin.getTypeAccount())) {
             throw new UserFriendlyException("Only admins can approve deposits");
         }

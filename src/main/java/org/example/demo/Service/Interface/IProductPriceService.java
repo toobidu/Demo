@@ -16,5 +16,4 @@ public interface IProductPriceService {
     List<ProductPriceDTO> getProductPrices(Long productId, String rank);
 
     List<ProductPriceDTO> getAllProductPrices();
-
 }

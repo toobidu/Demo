@@ -13,6 +13,8 @@ import java.util.Map;
 
 public interface IAuthService {
     ResponseEntity<ApiResponse<LoginResponse>> login(@Valid @RequestBody LoginRequest loginRequest);
+
     ResponseEntity<ApiResponse<UserDTO>> register(@Valid @RequestBody RegisterRequest registerRequest);
+
     ResponseEntity<ApiResponse<LoginResponse>> refreshToken(@RequestBody Map<String, String> request);
 }

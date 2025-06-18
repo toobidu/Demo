@@ -27,5 +27,4 @@ public class CustomerUserService implements UserDetailsService {
                 .authorities(permissions.toArray(new String[0])) // gán authority thực
                 .build();
     }
-
 }

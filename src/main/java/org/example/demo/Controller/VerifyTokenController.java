@@ -41,7 +41,7 @@ public class VerifyTokenController {
             return ResponseEntity.ok(ApiResponse.success("Token hợp lệ", claims));
 
         } catch (Exception e) {
-            log.error("Lỗi khi xác minh token: {}", e.getMessage());
+            log.error("Error verifying token: {}", e.getMessage());
             return ResponseEntity.internalServerError().body(ApiResponse.error("Đã xảy ra lỗi khi xác minh token"));
         }
     }

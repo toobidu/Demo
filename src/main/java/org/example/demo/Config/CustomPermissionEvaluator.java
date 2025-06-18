@@ -21,13 +21,13 @@ public class CustomPermissionEvaluator implements PermissionEvaluator {
     @Override
     public boolean hasPermission(Authentication authentication, Object targetDomainObject, Object permission) {
         if (authentication == null || !authentication.isAuthenticated()) {
-            log.warn("Authentication null hoặc chưa xác thực");
+            log.warn("Authentication is null or unauthenticated {}", authentication);
             return false;
         }
 
         Object principal = authentication.getPrincipal();
         if (!(principal instanceof UserDetails userDetails)) {
-            log.warn("Principal không phải kiểu UserDetails: {}", principal.getClass());
+            log.warn("Principal is not instance of UserDetails: {}", principal.getClass());
             return false;
         }
 
@@ -38,14 +38,14 @@ public class CustomPermissionEvaluator implements PermissionEvaluator {
         try {
             userId = Long.valueOf(username);
         } catch (NumberFormatException e) {
-            log.error("Không thể parse userId từ username: {}", username);
+            log.error("Cannot parse userId from username: {}", username);
             return false;
         }
 
         // 👇 Luôn kiểm tra từ Redis
         boolean result = redisService.hasPermission(userId, requiredPermission);
         if (!result) {
-            log.warn("Người dùng {} không có quyền '{}'", userId, requiredPermission);
+            log.warn("User {} does not have permission  '{}'", userId, requiredPermission);
         }
         return result;
     }

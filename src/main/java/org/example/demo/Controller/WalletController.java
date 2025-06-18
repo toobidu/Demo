@@ -24,7 +24,7 @@ public class WalletController {
             @RequestParam @DecimalMin(value = "1.00", message = "Amount must be positive") BigDecimal amount,
             @RequestParam Long adminId) {
         WalletDTO walletDTO = walletService.deposit(userId, amount, adminId);
-        return ResponseEntity.ok(ApiResponse.success("Nap tien thanh cong!", walletDTO));
+        return ResponseEntity.ok(ApiResponse.success("Nạp tiền thành công!", walletDTO));
     }
 
     @GetMapping("/{userId}")

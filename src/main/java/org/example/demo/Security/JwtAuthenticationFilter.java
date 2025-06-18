@@ -54,7 +54,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             try {
                 if (!jwtUtil.validateToken(token)) {
-                    log.warn("Token không hợp lệ");
+                    log.warn("Invalid token");
                     response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token không hợp lệ");
                     return;
                 }
@@ -75,14 +75,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
                 SecurityContextHolder.getContext().setAuthentication(authentication);
-                log.info("Đã xác thực người dùng: {}", userId);
+                log.info("User {} is authenticated", userId);
             } catch (Exception e) {
-                log.error("Lỗi xác thực JWT: {}", e.getMessage());
+                log.error("Error authenticating user", e.getMessage());
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token không hợp lệ");
                 return;
             }
         } else {
-            log.warn("Không tìm thấy Bearer token");
+            log.warn("Cannot find Bearer token");
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Thiếu token xác thực");
             return;
         }
