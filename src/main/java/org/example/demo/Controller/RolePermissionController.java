@@ -15,24 +15,24 @@ public class RolePermissionController {
     @PostMapping("/add")
     public ResponseEntity<?> addPermissionToRole(@RequestParam Long roleId, @RequestParam Long permissionId) {
         rolePermissionService.addPermissionToRole(roleId, permissionId);
-        return ResponseEntity.ok("Permission added to role and cache updated!");
+        return ResponseEntity.ok("Quyền đã được gán cho vai trò thành công và lưu vào Redis!");
     }
 
     @PostMapping("/remove")
     public ResponseEntity<?> removePermissionFromRole(@RequestParam Long roleId, @RequestParam Long permissionId) {
         rolePermissionService.removePermissionFromRole(roleId, permissionId);
-        return ResponseEntity.ok("Permission removed from role and cache updated!");
+        return ResponseEntity.ok("Quyền đã được xóa thành công và lưu vào Redis !");
     }
 
     @PostMapping("/add-multiple")
     public ResponseEntity<?> addPermissionsToRole(@RequestBody RolePermissionRequest request) {
         rolePermissionService.addMorePermissionsToRole(request.getRoleId(), request.getPermissionIds());
-        return ResponseEntity.ok("Permissions added to role and cache updated!");
+        return ResponseEntity.ok("Các quyền được gán cho vài trò thành công và lưu vào Redis!");
     }
 
     @PostMapping("/remove-multiple")
     public ResponseEntity<?> removePermissionsFromRole(@RequestBody RolePermissionRequest request) {
         rolePermissionService.removeMorePermissionsFromRole(request.getRoleId(), request.getPermissionIds());
-        return ResponseEntity.ok("Permissions removed from role and cache updated!");
+        return ResponseEntity.ok("Các quyền được xóa thành công và lưu vào Redis!");
     }
 }

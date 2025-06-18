@@ -80,7 +80,7 @@ Người dùng → [JWT Token] → JwtAuthenticationFilter → Spring Security
 
 ---
 
-## 🚀 Hướng dẫn cài đặt và chạy bằng Docker
+## 🚀 Hướng dẫn cài đặt, chạy bằng Docker và test bằng Postman
 
 ```bash
 git clone https://github.com/toobidu/Demo.git
@@ -94,3 +94,4 @@ docker build -t demo-app .
 ```bash
 docker-compose up --build
 ```
+🔗 [Postman Collection](https://www.postman.co/workspace/My-Workspace~02e24c2e-eb7c-48e1-8ed3-5079b32df085/collection/40920755-457b1317-f589-4667-a883-a401e013c594?action=share&creator=40920755)
