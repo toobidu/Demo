@@ -19,8 +19,12 @@ Dự án phát triển hệ thống bán hàng với các chức năng quản l�
 ## 📌 Tính năng chính
 
 ### 1. 👤 Quản lý người dùng
-- Phân loại: `Admin`, `Nhà in`, `Sale`
+- Phân loại: `SUPER_ADMIN`, `Admin`, `Nhà in`, `Sale`
 - Chức năng: Quản lý CRUD, phân quyền qua Redis, hỗ trợ lọc và tìm kiếm
+- Quyền hạn:
+  - ✅ `SUPER_ADMIN`: Có toàn quyền với mọi vai trò, bao gồm cấp quyền cho `Admin`, `Nhà in`, `Sale` và các `Admin` khác.
+  - ✅ `Admin`: Chỉ được thao tác với `Sale` và `Nhà in`.
+  - 🚫 `Admin`: Không được phép thao tác với `Admin` khác hoặc `SUPER_ADMIN`.
 
 ### 2. 📦 Quản lý sản phẩm
 - Mỗi sản phẩm bao gồm:
@@ -29,12 +33,14 @@ Dự án phát triển hệ thống bán hàng với các chức năng quản l�
 
 ### 3. 🛒 Quản lý đơn hàng
 
-| Vai trò     | Quyền xử lý đơn hàng                                          |
-|-------------|---------------------------------------------------------------|
-| Admin       | Xem toàn bộ đơn hàng, trừ các đơn bị Sale hủy                 |
-| Sale        | Quản lý CRUD đơn hàng của mình, chỉ hủy đơn ở trạng thái cho phép |
-| Nhà in      | Xem đơn hàng theo trạng thái: `Order`, `Processing`, ...      |
+| Vai trò         | Quyền xử lý đơn hàng                                          |
+|-----------------|---------------------------------------------------------------|
+| SUPER_ADMIN     | Toàn quyền xem và thao tác với mọi đơn hàng, bao gồm cả đơn bị Sale hủy |
+| Admin           | Xem toàn bộ đơn hàng, trừ các đơn bị Sale hủy                 |
+| Sale            | Quản lý CRUD đơn hàng của mình, chỉ hủy đơn ở trạng thái cho phép |
+| Nhà in          | Xem đơn hàng theo trạng thái: `Order`, `Processing`, ...      |
 
+---
 ### 4. 💰 Quản lý tài chính nội bộ
 
 - **Nạp tiền**: Sale gửi yêu cầu → Admin duyệt → Cộng tiền vào tài khoản Sale
