@@ -52,6 +52,4 @@ public class ProductPriceController {
         List<ProductPriceDTO> productPrices = productPriceService.getAllProductPrices();
         return ResponseEntity.ok(ApiResponse.success("Lấy ra danh sách product price!", productPrices));
     }
-
-
 }

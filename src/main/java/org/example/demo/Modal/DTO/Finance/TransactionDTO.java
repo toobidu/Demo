@@ -18,6 +18,9 @@ public class TransactionDTO {
     private BigDecimal amount;
     private String transactionType;
     private Long adminId;
+    private String adminName;
     private Long orderId;
     private List<OrderDTO> orders;
+    private String fromUserName;
+    private String toUserName;
 }

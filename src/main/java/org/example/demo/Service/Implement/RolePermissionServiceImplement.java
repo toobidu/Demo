@@ -1,16 +1,15 @@
 package org.example.demo.Service.Implement;
 
 import lombok.RequiredArgsConstructor;
-import org.example.demo.Modal.Entity.Users.Permission;
-import org.example.demo.Modal.Entity.Users.Role;
-import org.example.demo.Modal.Entity.Users.RolePermission;
-import org.example.demo.Modal.Entity.Users.RolePermissionId;
-import org.example.demo.Repository.PermissionRepository;
-import org.example.demo.Repository.RolePermissionRepository;
-import org.example.demo.Repository.RoleRepository;
-import org.example.demo.Repository.UserRoleRepository;
+import lombok.extern.slf4j.Slf4j;
+import org.example.demo.Exception.UserFriendlyException;
+import org.example.demo.Modal.Entity.Users.*;
+import org.example.demo.Repository.*;
 import org.example.demo.Service.Interface.IRolePermissionService;
 import org.example.demo.Service.RedisService;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,11 +19,14 @@ import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class RolePermissionServiceImplement implements IRolePermissionService {
+
     private final RolePermissionRepository rolePermissionRepository;
     private final UserRoleRepository userRoleRepository;
     private final RoleRepository roleRepository;
     private final PermissionRepository permissionRepository;
+    private final UserRepository userRepository;
     private final RedisService redisService;
 
     @Override
@@ -32,6 +34,12 @@ public class RolePermissionServiceImplement implements IRolePermissionService {
     public void addPermissionToRole(Long roleId, Long permissionId) {
         Role role = roleRepository.findById(roleId).orElseThrow();
         Permission permission = permissionRepository.findById(permissionId).orElseThrow();
+
+        // ✅ Kiểm tra phân quyền trước khi tiếp tục
+        if (!canCurrentUserModifyRole(role.getRoleName())) {
+            throw new UserFriendlyException("Không có quyền thao tác với role này");
+        }
+
         RolePermissionId id = new RolePermissionId(roleId, permissionId);
         RolePermission rolePermission = new RolePermission();
         rolePermission.setId(id);
@@ -41,9 +49,9 @@ public class RolePermissionServiceImplement implements IRolePermissionService {
 
         String permissionName = permission.getPermissionName();
         var userIds = userRoleRepository.findUserIdsByRoleId(roleId);
-        if (userIds != null) {
+        if (userIds != null && !userIds.isEmpty()) {
             for (Long userId : userIds) {
-                redisService.addPermissions(userId, Set.of(permissionName)); // THÊM QUYỀN CỤ THỂ
+                redisService.addPermissions(userId, Set.of(permissionName));
             }
         }
     }
@@ -51,6 +59,13 @@ public class RolePermissionServiceImplement implements IRolePermissionService {
     @Override
     @Transactional
     public void removePermissionFromRole(Long roleId, Long permissionId) {
+        Role role = roleRepository.findById(roleId).orElseThrow();
+
+        // Kiểm tra phân quyền trước khi xóa
+        if (!canCurrentUserModifyRole(role.getRoleName())) {
+            throw new UserFriendlyException("Không có quyền thao tác với role này");
+        }
+
         RolePermissionId id = new RolePermissionId(roleId, permissionId);
         rolePermissionRepository.deleteById(id);
 
@@ -58,9 +73,9 @@ public class RolePermissionServiceImplement implements IRolePermissionService {
         String permissionName = permission.getPermissionName();
 
         var userIds = userRoleRepository.findUserIdsByRoleId(roleId);
-        if (userIds != null) {
+        if (userIds != null && !userIds.isEmpty()) {
             for (Long userId : userIds) {
-                redisService.removePermissions(userId, Set.of(permissionName)); // XÓA QUYỀN CỤ THỂ
+                redisService.removePermissions(userId, Set.of(permissionName));
             }
         }
     }
@@ -69,6 +84,12 @@ public class RolePermissionServiceImplement implements IRolePermissionService {
     @Transactional
     public void addMorePermissionsToRole(Long roleId, List<Long> permissionIds) {
         Role role = roleRepository.findById(roleId).orElseThrow();
+
+        // Kiểm tra quyền trước khi thực hiện
+        if (!canCurrentUserModifyRole(role.getRoleName())) {
+            throw new UserFriendlyException("Không có quyền thao tác với role này");
+        }
+
         Set<String> permissionsToAdd = new HashSet<>();
 
         for (Long permissionId : permissionIds) {
@@ -95,6 +116,13 @@ public class RolePermissionServiceImplement implements IRolePermissionService {
     @Override
     @Transactional
     public void removeMorePermissionsFromRole(Long roleId, List<Long> permissionIds) {
+        Role role = roleRepository.findById(roleId).orElseThrow();
+
+        // ✅ Kiểm tra phân quyền trước khi xóa nhiều quyền
+        if (!canCurrentUserModifyRole(role.getRoleName())) {
+            throw new UserFriendlyException("Không có quyền thao tác với role này");
+        }
+
         Set<String> permissionsToRemove = new HashSet<>();
         for (Long permissionId : permissionIds) {
             Permission permission = permissionRepository.findById(permissionId).orElseThrow();
@@ -108,6 +136,48 @@ public class RolePermissionServiceImplement implements IRolePermissionService {
             for (Long userId : userIds) {
                 redisService.removePermissions(userId, permissionsToRemove);
             }
+        }
+    }
+
+    // Hàm kiểm tra phân quyền người dùng hiện tại
+    private boolean canCurrentUserModifyRole(String targetRoleName) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return false;
+        }
+
+        Object principal = authentication.getPrincipal();
+        if (!(principal instanceof UserDetails userDetails)) {
+            return false;
+        }
+
+        String username = userDetails.getUsername();
+        try {
+            Long userId = Long.valueOf(username);
+            String userRole = userRepository.findById(userId)
+                    .map(User::getTypeAccount)
+                    .map(String::toUpperCase)
+                    .orElse("");
+
+            targetRoleName = targetRoleName.toUpperCase();
+
+            //Super admin có toàn quyền
+            if ("SUPER_ADMIN".equalsIgnoreCase(userRole)) {
+                return true;
+            }
+
+            //Admin chỉ được thao tác với SALE & PRINTER_HOUSE
+            if ("ADMIN".equalsIgnoreCase(userRole)) {
+                Set<String> allowedRolesForAdmin = Set.of("SALE", "PRINTER_HOUSE");
+
+                return allowedRolesForAdmin.contains(targetRoleName);
+            }
+
+            //Người dùng thường không được phép thao tác
+            return false;
+
+        } catch (NumberFormatException e) {
+            return false;
         }
     }
 }

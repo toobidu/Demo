@@ -31,21 +31,21 @@ public class RoleController {
     }
 
     @PostMapping
-    @PreAuthorize("hasPermission(null, 'manage_roles')")
+    @PreAuthorize("hasPermission(null, 'create_role')")
     public ResponseEntity<ApiResponse<RoleDTO>> createRole(@Valid @RequestBody RoleDTO roleDTO) {
         RoleDTO created = roleService.createRole(roleDTO);
         return ResponseEntity.ok(ApiResponse.success("Tạo role thành công!", created));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasPermission(null, 'manage_roles')")
+    @PreAuthorize("hasPermission(null, 'update_role')")
     public ResponseEntity<ApiResponse<RoleDTO>> updateRole(@PathVariable Long id, @Valid @RequestBody RoleDTO roleDTO) {
         RoleDTO updated = roleService.updateRole(id, roleDTO);
         return ResponseEntity.ok(ApiResponse.success("Cập nhật role thành công!", updated));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasPermission(null, 'manage_roles')")
+    @PreAuthorize("hasPermission(null, 'delete_role')")
     public ResponseEntity<ApiResponse<Void>> deleteRole(@PathVariable Long id) {
         roleService.deleteRole(id);
         return ResponseEntity.ok(ApiResponse.success("Xóa role thành công!", null));

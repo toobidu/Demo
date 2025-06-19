@@ -57,18 +57,17 @@ public class AuthServiceImplement implements IAuthService {
             return ResponseEntity.badRequest().body(ApiResponse.error("Thông tin đăng nhập không chính xác!"));
         }
 
-        // ✅ Lấy quyền từ DB và lưu vào Redis
+        //Lấy quyền từ DB và lưu vào Redis
         Set<String> permissions = getUserPermissions(user.getId());
         saveUserPermissionsToRedis(user.getId(), permissions);
 
-        // ❌ Không còn đưa quyền vào token
         String accessToken = jwtUtil.generateAccessToken(user.getId(), user.getTypeAccount(), user.getRank());
         String refreshToken = jwtUtil.generateRefreshToken(user.getId());
 
-        // ✅ Lưu refresh token vào DB
+        //Lưu refresh token vào DB
         saveRefreshToken(user, refreshToken);
 
-        // ✅ Tạo response trả về client
+        //Tạo response trả về client
         LoginResponse response = new LoginResponse();
         response.setAccessToken(accessToken);
         response.setRefreshToken(refreshToken);
@@ -204,7 +203,7 @@ public class AuthServiceImplement implements IAuthService {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.error("Không tìm thấy người dùng"));
         }
 
-        // ✅ Lấy quyền mới nhất từ DB và tạo token mới
+        //Lấy quyền mới nhất từ DB và tạo token mới
         Set<String> permissions = getUserPermissions(userId);
         saveUserPermissionsToRedis(userId, permissions); // Cập nhật Redis nếu cần
 

@@ -88,7 +88,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private Collection<SimpleGrantedAuthority> getAuthoritiesFromRedis(Long userId) {
         Set<String> permissions = redisService.getUserPermissions(userId);
         if (permissions == null || permissions.isEmpty()) {
-            log.warn("🚫 Người dùng {} không có quyền nào", userId);
+            log.warn("No permissions found for userId: {}", userId);
             return Collections.emptyList();
         }
 

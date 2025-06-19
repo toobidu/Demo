@@ -1,8 +1,6 @@
 package org.example.demo.Security;
 
-import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,11 +10,8 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
 import java.util.Date;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Component
 @Slf4j
@@ -40,9 +35,6 @@ public class JwtUtil {
         }
     }
 
-    /**
-     * Tạo access token không chứa permissions → để phân quyền động qua Redis
-     */
     public String generateAccessToken(Long userId, String typeAccount, String rank) {
         try {
             log.info("Generating access token for userId: {}", userId);
@@ -90,7 +82,7 @@ public class JwtUtil {
                     .subject(userId.toString())
                     .issuedAt(now)
                     .expiration(expiration)
-                    .signWith(getSigningKey(), SignatureAlgorithm.HS384)
+                    .signWith(getSigningKey())
                     .compact();
 
             log.info("Refresh token generated successfully for userId: {}", userId);
@@ -163,15 +155,15 @@ public class JwtUtil {
         }
     }
 
-    public String getTypeAccountFromToken(String token) {
-        Map<String, Object> claims = getAllClaimsFromToken(token);
-        return (String) claims.get("typeAccount");
-    }
-
-    public String getRankFromToken(String token) {
-        Map<String, Object> claims = getAllClaimsFromToken(token);
-        return (String) claims.get("rank");
-    }
+//    public String getTypeAccountFromToken(String token) {
+//        Map<String, Object> claims = getAllClaimsFromToken(token);
+//        return (String) claims.get("typeAccount");
+//    }
+//
+//    public String getRankFromToken(String token) {
+//        Map<String, Object> claims = getAllClaimsFromToken(token);
+//        return (String) claims.get("rank");
+//    }
 
     public long getRefreshExpiration() {
         return jwtConfig.getRefreshExpiration();

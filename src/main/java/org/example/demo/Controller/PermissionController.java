@@ -31,21 +31,21 @@ public class PermissionController {
     }
 
     @PostMapping
-    @PreAuthorize("hasPermission(null, 'manage_permissions')")
+    @PreAuthorize("hasPermission(null, 'create_permission')")
     public ResponseEntity<ApiResponse<PermissionDTO>> createPermission(@Valid @RequestBody PermissionDTO permissionDTO) {
         PermissionDTO created = permissionService.createPermission(permissionDTO);
         return ResponseEntity.ok(ApiResponse.success("Tạo quyền thành công!", created));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasPermission(null, 'manage_permissions')")
+    @PreAuthorize("hasPermission(null, 'update_permission')")
     public ResponseEntity<ApiResponse<PermissionDTO>> updatePermission(@PathVariable Long id, @Valid @RequestBody PermissionDTO permissionDTO) {
         PermissionDTO updated = permissionService.updatePermission(id, permissionDTO);
         return ResponseEntity.ok(ApiResponse.success("Cập nhật quyền thành công!", updated));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasPermission(null, 'manage_permissions')")
+    @PreAuthorize("hasPermission(null, 'delete_permission')")
     public ResponseEntity<ApiResponse<Void>> deletePermission(@PathVariable Long id) {
         permissionService.deletePermission(id);
         return ResponseEntity.ok(ApiResponse.success("Xóa quyền thành công!", null));
