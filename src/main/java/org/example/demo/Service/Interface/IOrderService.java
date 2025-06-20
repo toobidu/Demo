@@ -9,6 +9,8 @@ public interface IOrderService {
 
     OrderDTO updateOrder(Long id, OrderDTO orderDTO);
 
+    OrderDTO updateOrderStatus(Long id, String newStatus);
+
     void cancelOrder(Long id);
 
     OrderDTO getOrderById(Long id);

@@ -18,7 +18,7 @@ public class TransactionController {
     private final ITransactionService transactionService;
 
     @PostMapping
-    @PreAuthorize("hasPermission(null, 'create_transaction') or hasPermission(null, 'approve_deposit')")
+    @PreAuthorize("hasPermission(null, 'create_transaction') and #transactionDTO.transactionType == 'deposit'")
     public ResponseEntity<ApiResponse<TransactionDTO>> createTransaction(@RequestBody TransactionDTO transactionDTO) {
         return ResponseEntity.ok(ApiResponse.success("Giao dịch đã được tạo thành công!", transactionService.createTransaction(transactionDTO)));
     }

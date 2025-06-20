@@ -29,7 +29,16 @@ public class OrderController {
         return ResponseEntity.ok(ApiResponse.success("Đơn hàng đã được cập nhật thành công!", orderService.updateOrder(id, orderDTO)));
     }
 
-    @DeleteMapping("/{id}")
+    @PutMapping("/{id}/status")
+    @PreAuthorize("hasPermission(null, 'change_order_status')")
+    public ResponseEntity<ApiResponse<OrderDTO>> updateOrderStatus(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        return ResponseEntity.ok(ApiResponse.success("Cập nhật trạng thái thành công!",
+                orderService.updateOrderStatus(id, status)));
+    }
+
+    @PutMapping("/{id}/cancel")
     @PreAuthorize("hasPermission(null, 'cancel_order')")
     public ResponseEntity<ApiResponse<Void>> cancelOrder(@PathVariable Long id) {
         orderService.cancelOrder(id);

@@ -13,6 +13,7 @@ import org.example.demo.Modal.Entity.Products.ProductPrice;
 import org.example.demo.Modal.Entity.Users.User;
 import org.example.demo.Repository.*;
 import org.example.demo.Service.Interface.IOrderService;
+import org.example.demo.Service.Interface.IWalletService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +33,7 @@ public class OrderServiceImplement implements IOrderService {
     private final ProductPriceRepository productPriceRepository;
     private final WalletRepository walletRepository;
     private final OrderItemRepository orderItemRepository;
+    private final IWalletService walletService;
 
     @Override
     @Transactional
@@ -56,16 +58,22 @@ public class OrderServiceImplement implements IOrderService {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new UserFriendlyException("Order not found"));
 
+        String currentStatus = order.getStatus();
         String newStatus = orderDTO.getStatus();
-        if (!isValidStatusTransition(order.getStatus(), newStatus)) {
+
+        if (!isValidStatusTransition(currentStatus, newStatus)) {
             throw new UserFriendlyException("Invalid status transition");
         }
 
+        // Xử lý tài chính theo trạng thái mới
         if ("order".equals(newStatus)) {
-            Wallet wallet = order.getWallet();
-            validateWalletBalance(wallet, order.getTotalAmount(), order);
+            deductBalanceFromSale(order); // Trừ tiền của Sale
+            creditAdmin(order);           // Cộng tiền cho Admin
+        } else if ("shipping".equals(newStatus)) {
+            creditPrinthouse(order);      // Cộng tiền cho Nhà in
         }
 
+        // Cập nhật thông tin đơn hàng
         order.setStatus(newStatus);
         order.setUpdatedAt(LocalDateTime.now());
         if (orderDTO.getPrintPrice() != null) order.setPrintPrice(orderDTO.getPrintPrice());
@@ -78,13 +86,47 @@ public class OrderServiceImplement implements IOrderService {
 
     @Override
     @Transactional
+    public OrderDTO updateOrderStatus(Long id, String newStatus) {
+        log.info("Updating status of order ID {}: {}", id, newStatus);
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new UserFriendlyException("Order not found"));
+
+        String currentStatus = order.getStatus();
+
+        if (!isValidStatusTransition(currentStatus, newStatus)) {
+            throw new UserFriendlyException("Invalid status transition");
+        }
+
+        if ("order".equals(newStatus)) {
+            deductBalanceFromSale(order); // Trừ tiền của Sale
+            creditAdmin(order);           // Cộng tiền cho Admin
+        } else if ("shipping".equals(newStatus)) {
+            creditPrinthouse(order);      // Cộng tiền cho Nhà in
+        }
+
+        order.setStatus(newStatus);
+        order.setUpdatedAt(LocalDateTime.now());
+        order = orderRepository.save(order);
+
+        return toOrderDTOWithItems(order);
+    }
+
+    @Override
+    @Transactional
     public void cancelOrder(Long id) {
         log.info("Cancelling order ID: {}", id);
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new UserFriendlyException("Order not found"));
-        if (!order.getStatus().equals("pending_payment") && !order.getStatus().equals("order")) {
-            throw new UserFriendlyException("Order can only be cancelled in pending_payment or order status");
+
+        if (!"pending_payment".equals(order.getStatus()) && !"order".equals(order.getStatus())) {
+            throw new UserFriendlyException("Chỉ được hủy đơn ở trạng thái chờ thanh toán hoặc order");
         }
+
+        // Hoàn tiền nếu đã thanh toán
+        if ("order".equals(order.getStatus())) {
+            walletService.refundOnCancel(order.getUser().getId(), order.getTotalAmount());
+        }
+
         order.setStatus("cancelled");
         order.setUpdatedAt(LocalDateTime.now());
         orderRepository.save(order);
@@ -119,7 +161,29 @@ public class OrderServiceImplement implements IOrderService {
                 .stream().map(this::toOrderDTOWithItems).collect(Collectors.toList());
     }
 
-    //Tách nhỏ logic thành các hàm
+    //Các hàm xử lý tài chính
+    private void deductBalanceFromSale(Order order) {
+        Wallet wallet = order.getWallet();
+        BigDecimal amount = order.getTotalAmount();
+
+        if (wallet == null || wallet.getBalance().compareTo(amount) < 0) {
+            throw new UserFriendlyException("Số dư không đủ để thực hiện giao dịch");
+        }
+
+        walletService.deductBalance(wallet.getUser().getId(), amount);
+    }
+
+    private void creditAdmin(Order order) {
+        BigDecimal amount = order.getTotalAmount();
+        walletService.creditAdmin(amount);
+    }
+
+    private void creditPrinthouse(Order order) {
+        BigDecimal amount = order.getPrintPrice();
+        walletService.creditPrinthouse(order.getUser().getId(), amount);
+    }
+
+    // --- Các hàm hỗ trợ ---
 
     private User validateUser(Long userId) {
         User user = userRepository.findById(userId)
@@ -176,7 +240,7 @@ public class OrderServiceImplement implements IOrderService {
         if (wallet.getBalance().compareTo(required) < 0) {
             order.setStatus("cancelled");
             orderRepository.save(order);
-            throw new UserFriendlyException("Insufficient balance");
+            throw new UserFriendlyException("Số dư không đủ để tạo đơn");
         }
     }
 
