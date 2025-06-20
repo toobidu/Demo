@@ -3,13 +3,17 @@ package org.example.demo.Controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.demo.Config.ApiResponse;
+import org.example.demo.Mapper.ProductPriceMapper;
 import org.example.demo.Modal.DTO.Products.ProductPriceDTO;
+import org.example.demo.Modal.Entity.Products.ProductPrice;
+import org.example.demo.Repository.ProductPriceRepository;
 import org.example.demo.Service.Interface.IProductPriceService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/product-prices")
@@ -17,6 +21,8 @@ import java.util.List;
 public class ProductPriceController {
 
     private final IProductPriceService productPriceService;
+    private final ProductPriceMapper productPriceMapper;
+    private final ProductPriceRepository productPriceRepository;
 
     @PostMapping
     @PreAuthorize("hasPermission(null, 'create_product_price')")
@@ -51,5 +57,15 @@ public class ProductPriceController {
     public ResponseEntity<ApiResponse<List<ProductPriceDTO>>> getAllProductPrices() {
         List<ProductPriceDTO> productPrices = productPriceService.getAllProductPrices();
         return ResponseEntity.ok(ApiResponse.success("Lấy ra danh sách product price!", productPrices));
+    }
+
+    @GetMapping("/base/product/{productId}")
+    @PreAuthorize("hasRole('printer_house') or hasRole('admin')")
+    public ResponseEntity<ApiResponse<List<ProductPriceDTO>>> getBaseProductPrices(@PathVariable Long productId) {
+        List<ProductPrice> prices = productPriceRepository.findByProductIdAndIsBaseTrue(productId);
+        List<ProductPriceDTO> dtos = prices.stream()
+                .map(productPriceMapper::toDTO)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(ApiResponse.success("Lấy ra giá gốc của sản phẩm!", dtos));
     }
 }

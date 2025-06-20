@@ -13,7 +13,7 @@ import java.util.List;
 public class ProductDTO {
     private Long id;
     private String sku;
-    private String name;
+    private String productName;
     private BigDecimal basePrice;
     private String description;
     private List<ProductPriceDTO> productPrices;

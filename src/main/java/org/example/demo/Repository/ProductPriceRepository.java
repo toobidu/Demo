@@ -11,4 +11,6 @@ public interface ProductPriceRepository extends JpaRepository<ProductPrice, Long
     List<ProductPrice> findByProductId(Long productId);
 
     List<ProductPrice> findByProductIdAndRank(Long productId, String rank);
+
+    List<ProductPrice> findByProductIdAndIsBaseTrue(Long productId);
 }

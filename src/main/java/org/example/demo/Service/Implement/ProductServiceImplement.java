@@ -23,7 +23,7 @@ public class ProductServiceImplement implements IProductService {
 
     @Override
     public ProductDTO createProduct(ProductDTO productDTO) {
-        log.info("Creating product: {}", productDTO.getName());
+        log.info("Creating product: {}", productDTO.getProductName());
         Product product = buildProductFromDTO(productDTO);
         product = productRepository.save(product);
         log.info("Product created with ID: {}", product.getId());
@@ -57,9 +57,9 @@ public class ProductServiceImplement implements IProductService {
     }
 
     @Override
-    public List<ProductDTO> getAllProducts(String name) {
-        log.info("Retrieving products with name: {}", name);
-        List<Product> products = name != null && !name.isEmpty() ? productRepository.findByNameContainingIgnoreCase(name) : productRepository.findAll();
+    public List<ProductDTO> getAllProducts(String productName) {
+        log.info("Retrieving products with name: {}", productName);
+        List<Product> products = productName != null && !productName.isEmpty() ? productRepository.findByProductName(productName) : productRepository.findAll();
         return products.stream().map(productMapper::toDTO).collect(Collectors.toList());
     }
 
@@ -74,13 +74,17 @@ public class ProductServiceImplement implements IProductService {
 
     private Product buildProductFromDTO(ProductDTO dto) {
         Product product = productMapper.toEntity(dto);
+        product.setSku(dto.getSku());
+        product.setProductName(dto.getProductName());
+        product.setBasePrice(dto.getBasePrice());
+        product.setDescription(dto.getDescription());
         product.setCreatedAt(LocalDateTime.now());
         product.setUpdatedAt(LocalDateTime.now());
         return product;
     }
 
     private void updateProductFields(Product product, ProductDTO dto) {
-        product.setName(dto.getName());
+        product.setProductName(dto.getProductName());
         product.setDescription(dto.getDescription());
         product.setBasePrice(dto.getBasePrice());
     }

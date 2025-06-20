@@ -1,4 +1,4 @@
--- Thêm dữ liệu vào bảng roles
+/*-- Thêm dữ liệu vào bảng roles
 INSERT INTO roles (role_name, description)
 VALUES ('SUPER_ADMIN', 'Đấng toàn năng.'),
        ('ADMIN', 'Người quản trị hệ thống, có toàn quyền quản lý.'),
@@ -70,4 +70,4 @@ INSERT INTO permissions (id, permission_name, description) VALUES
 (44, 'refund_money_on_cancelled_order', 'Hoàn tiền cho Sale khi hủy đơn'),
 (45, 'deposit_money', 'Sale gửi yêu cầu nạp tiền'),
 (46, 'approve_deposit', 'Admin duyệt yêu cầu nạp tiền'),
-(47, 'view_wallet', 'Xem ví của người dùng');
+(47, 'view_wallet', 'Xem ví của người dùng');*/

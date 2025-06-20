@@ -30,4 +30,7 @@ public class ProductPrice {
 
     @Column(name = "price", columnDefinition = "NUMERIC(18,2)")
     private BigDecimal price;
+
+    @Column(name = "is_base")
+    private boolean isBase;
 }

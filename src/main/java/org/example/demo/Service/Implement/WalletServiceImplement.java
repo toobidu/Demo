@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @Slf4j
@@ -26,11 +27,7 @@ public class WalletServiceImplement implements IWalletService {
     private final WalletRepository walletRepository;
     private final TransactionRepository transactionRepository;
     private final UserRepository userRepository;
-
     private final WalletMapper walletMapper;
-
-    @Value("${admin.default-id}")
-    private Long ADMIN_ID; // Có thể lấy từ DB hoặc config nếu cần
 
     @Override
     public WalletDTO deposit(Long userId, BigDecimal amount, Long adminId) {
@@ -82,7 +79,15 @@ public class WalletServiceImplement implements IWalletService {
     public void creditAdmin(BigDecimal amount) {
         log.info("Crediting {} to admin wallet", amount);
 
-        Wallet adminWallet = walletRepository.findByUserId(ADMIN_ID)
+        // Lấy admin đầu tiên trong hệ thống
+        List<User> admins = userRepository.findByTypeAccount("admin");
+
+        if (admins.isEmpty()) {
+            throw new UserFriendlyException("Không tìm thấy tài khoản admin nào");
+        }
+
+        User admin = admins.get(0); // hoặc kiểm tra thêm quyền cụ thể
+        Wallet adminWallet = walletRepository.findByUserId(admin.getId())
                 .orElseThrow(() -> new UserFriendlyException("Ví admin không tồn tại"));
 
         Transaction transaction = new Transaction();

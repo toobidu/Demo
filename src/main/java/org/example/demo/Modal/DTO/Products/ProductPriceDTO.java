@@ -15,4 +15,5 @@ public class ProductPriceDTO {
     private String rank;
     private String size;
     private BigDecimal price;
+    private boolean isBase;
 }

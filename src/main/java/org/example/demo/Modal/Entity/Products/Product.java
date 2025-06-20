@@ -25,7 +25,10 @@ public class Product {
     private Long id;
 
     @Column(name = "sku")
-    private String name;
+    private String sku;
+
+    @Column(name = "product_name", nullable = false)
+    private String productName;
 
     @Column(name = "base_price", columnDefinition = "NUMERIC(18,2)")
     private BigDecimal basePrice;
