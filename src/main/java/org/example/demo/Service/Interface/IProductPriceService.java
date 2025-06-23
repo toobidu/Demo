@@ -1,8 +1,7 @@
 package org.example.demo.Service.Interface;
 
 import org.example.demo.Modal.DTO.Products.ProductPriceDTO;
-
-import java.util.List;
+import org.springframework.data.domain.Page;
 
 public interface IProductPriceService {
     ProductPriceDTO createProductPrice(ProductPriceDTO productPriceDTO);
@@ -13,7 +12,7 @@ public interface IProductPriceService {
 
     ProductPriceDTO getProductPrice(Long id);
 
-    List<ProductPriceDTO> getProductPrices(Long productId, String rank);
+    Page<ProductPriceDTO> getProductPrices(Long productId, String rank, int page, int size);
 
-    List<ProductPriceDTO> getAllProductPrices();
+    Page<ProductPriceDTO> getAllProductPrices(int page, int size);
 }
