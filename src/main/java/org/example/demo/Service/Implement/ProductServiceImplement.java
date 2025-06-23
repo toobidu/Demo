@@ -62,11 +62,13 @@ public class ProductServiceImplement implements IProductService {
         log.info("Retrieving products with name: {}", productName);
         Pageable pageable = PageRequest.of(page - 1, size);
         Page<Product> productPage;
+
         if (productName != null && !productName.isEmpty()) {
-            productPage = productRepository.findByProductName(productName, pageable);
+            productPage = productRepository.searchByProductName(productName, pageable);
         } else {
             productPage = productRepository.findAll(pageable);
         }
+
         return productPage.map(productMapper::toDTO);
     }
 
