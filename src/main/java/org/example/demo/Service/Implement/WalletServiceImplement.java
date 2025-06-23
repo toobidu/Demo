@@ -40,6 +40,10 @@ public class WalletServiceImplement implements IWalletService {
         Wallet wallet = getWalletByUserId(userId);
         User admin = getAdminById(adminId);
 
+        // Cập nhật balance trước khi lưu giao dịch
+        wallet.setBalance(wallet.getBalance().add(amount));
+        walletRepository.save(wallet); // Lưu luôn wallet trước khi tạo giao dịch
+
         Transaction transaction = new Transaction();
         transaction.setToWallet(wallet);
         transaction.setAmount(amount);
@@ -47,10 +51,7 @@ public class WalletServiceImplement implements IWalletService {
         transaction.setAdmin(admin);
         transaction.setCreatedAt(LocalDateTime.now());
 
-        transactionRepository.save(transaction); // giả sử có trigger cập nhật balance tự động
-
-        wallet = walletRepository.findByUserId(userId)
-                .orElseThrow(() -> new UserFriendlyException("Wallet not found after deposit"));
+        transactionRepository.save(transaction);
 
         log.info("Deposit successful for userId: {}, new balance: {}", userId, wallet.getBalance());
         return walletMapper.toDTO(wallet);

@@ -32,7 +32,7 @@ public class WalletController {
 
     // Xem ví cá nhân
     @GetMapping("/{userId}")
-    @PreAuthorize("#userId == authentication.principal.id or hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasPermission(null, 'view_wallet')")
     public ResponseEntity<ApiResponse<WalletDTO>> getWallet(@PathVariable Long userId) {
         WalletDTO walletDTO = walletService.getWallet(userId);
         return ResponseEntity.ok(ApiResponse.success("Lấy ra ví thành công!", walletDTO));
