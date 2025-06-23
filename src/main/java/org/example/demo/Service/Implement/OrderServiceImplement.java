@@ -188,9 +188,9 @@ public class OrderServiceImplement implements IOrderService {
     private User validateUser(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserFriendlyException("User not found"));
-        if (!"sale".equals(user.getTypeAccount())) {
+        /*if (!"sale".equals(user.getTypeAccount())) {
             throw new UserFriendlyException("Only sale users can create orders");
-        }
+        }*/
         return user;
     }
 
