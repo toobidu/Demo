@@ -3,13 +3,14 @@ package org.example.demo.Controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.demo.Config.ApiResponse;
+import org.example.demo.Config.PageResponseDTO;
+import org.example.demo.Config.PageUtil;
 import org.example.demo.Modal.DTO.Products.ProductAttributeDTO;
 import org.example.demo.Service.Interface.IProductAttributeService;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/product-attributes")
@@ -48,8 +49,14 @@ public class ProductAttributeController {
 
     @GetMapping
     @PreAuthorize("hasPermission(null, 'view_product_attributes')")
-    public ResponseEntity<ApiResponse<List<ProductAttributeDTO>>> getAllProductAttributes() {
-        List<ProductAttributeDTO> attributes = productAttributeService.getAllProductAttributes();
-        return ResponseEntity.ok(ApiResponse.success("Lấy ra danh sách product attribute!", attributes));
+    public ResponseEntity<ApiResponse<PageResponseDTO<ProductAttributeDTO>>> getAllProductAttributes(
+            @RequestParam(name = "productId", required = false) Long productId,
+            @RequestParam(name = "page", defaultValue = "1") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size) {
+        Page<ProductAttributeDTO> attributes = (productId != null)
+                ? productAttributeService.getProductAttributes(productId, page, size)
+                : productAttributeService.getAllProductAttributes(page, size);
+        PageResponseDTO<ProductAttributeDTO> response = new PageUtil().toPageResponse(attributes);
+        return ResponseEntity.ok(ApiResponse.success("Lấy ra danh sách product attribute!", response));
     }
 }

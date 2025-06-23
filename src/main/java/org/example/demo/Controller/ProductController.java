@@ -3,13 +3,14 @@ package org.example.demo.Controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.demo.Config.ApiResponse;
+import org.example.demo.Config.PageResponseDTO;
+import org.example.demo.Config.PageUtil;
 import org.example.demo.Modal.DTO.Products.ProductDTO;
 import org.example.demo.Service.Interface.IProductService;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/products")
@@ -48,8 +49,12 @@ public class ProductController {
 
     @GetMapping
     @PreAuthorize("hasPermission(null, 'view_products')")
-    public ResponseEntity<ApiResponse<List<ProductDTO>>> getAllProducts(@RequestParam(name = "name", required = false) String name) {
-        List<ProductDTO> products = productService.getAllProducts(name);
-        return ResponseEntity.ok(ApiResponse.success("Lấy ra danh sách sản phẩm!", products));
+    public ResponseEntity<ApiResponse<PageResponseDTO<ProductDTO>>> getAllProducts(
+            @RequestParam(name = "name", required = false) String name,
+            @RequestParam(name = "page", defaultValue = "1") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size) {
+        Page<ProductDTO> productPage = productService.getAllProducts(name, page, size);
+        PageResponseDTO<ProductDTO> response = new PageUtil().toPageResponse(productPage);
+        return ResponseEntity.ok(ApiResponse.success("Lấy ra danh sách sản phẩm!", response));
     }
 }
