@@ -10,10 +10,10 @@ import org.example.demo.Modal.Entity.Products.ProductAttribute;
 import org.example.demo.Repository.ProductAttributeRepository;
 import org.example.demo.Repository.ProductRepository;
 import org.example.demo.Service.Interface.IProductAttributeService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -67,21 +67,18 @@ public class ProductAttributeImplement implements IProductAttributeService {
     }
 
     @Override
-    public List<ProductAttributeDTO> getProductAttributes(Long productId) {
-        log.info("Retrieving product attributes for productId: {}", productId);
-
-        List<ProductAttribute> attributes = (productId != null)
-                ? productAttributeRepository.findByProductId(productId)
-                : productAttributeRepository.findAll();
-
-        return attributes.stream()
-                .map(productAttributeMapper::toDTO)
-                .collect(Collectors.toList());
+    public Page<ProductAttributeDTO> getProductAttributes(Long productId, int page, int size) {
+        log.info("Retrieving product attributes for productId: {} with paging", productId);
+        Pageable pageable = PageRequest.of(page - 1, size);
+        Page<ProductAttribute> attributes = (productId != null)
+                ? productAttributeRepository.findByProductId(productId, pageable)
+                : productAttributeRepository.findAll(pageable);
+        return attributes.map(productAttributeMapper::toDTO);
     }
 
     @Override
-    public List<ProductAttributeDTO> getAllProductAttributes() {
-        return getProductAttributes(null);
+    public Page<ProductAttributeDTO> getAllProductAttributes(int page, int size) {
+        return getProductAttributes(null, page, size);
     }
 
 
@@ -103,4 +100,3 @@ public class ProductAttributeImplement implements IProductAttributeService {
                 });
     }
 }
-

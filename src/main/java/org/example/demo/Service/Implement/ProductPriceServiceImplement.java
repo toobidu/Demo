@@ -10,10 +10,10 @@ import org.example.demo.Modal.Entity.Products.ProductPrice;
 import org.example.demo.Repository.ProductPriceRepository;
 import org.example.demo.Repository.ProductRepository;
 import org.example.demo.Service.Interface.IProductPriceService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -69,24 +69,23 @@ public class ProductPriceServiceImplement implements IProductPriceService {
     }
 
     @Override
-    public List<ProductPriceDTO> getProductPrices(Long productId, String rank) {
-        log.info("Retrieving product prices - Product ID: {}, Rank: {}", productId, rank);
-        List<ProductPrice> prices;
-
+    public Page<ProductPriceDTO> getProductPrices(Long productId, String rank, int page, int size) {
+        log.info("Retrieving product prices - Product ID: {}, Rank: {}, page: {}, size: {}", productId, rank, page, size);
+        Pageable pageable = PageRequest.of(page - 1, size);
+        Page<ProductPrice> prices;
         if (productId != null && rank != null) {
-            prices = productPriceRepository.findByProductIdAndRank(productId, rank);
+            prices = productPriceRepository.findByProductIdAndRank(productId, rank, pageable);
         } else if (productId != null) {
-            prices = productPriceRepository.findByProductId(productId);
+            prices = productPriceRepository.findByProductId(productId, pageable);
         } else {
-            prices = productPriceRepository.findAll();
+            prices = productPriceRepository.findAll(pageable);
         }
-
-        return prices.stream().map(productPriceMapper::toDTO).collect(Collectors.toList());
+        return prices.map(productPriceMapper::toDTO);
     }
 
     @Override
-    public List<ProductPriceDTO> getAllProductPrices() {
-        return getProductPrices(null, null); // gọi lại hàm đã có để tránh lặp code
+    public Page<ProductPriceDTO> getAllProductPrices(int page, int size) {
+        return getProductPrices(null, null, page, size);
     }
 
 
@@ -108,4 +107,3 @@ public class ProductPriceServiceImplement implements IProductPriceService {
                 });
     }
 }
-
