@@ -1,8 +1,7 @@
 package org.example.demo.Service.Interface;
 
 import org.example.demo.Modal.DTO.Products.ProductDTO;
-
-import java.util.List;
+import org.springframework.data.domain.Page;
 
 public interface IProductService {
     ProductDTO createProduct(ProductDTO productDTO);
@@ -13,5 +12,5 @@ public interface IProductService {
 
     ProductDTO getProduct(Long id);
 
-    List<ProductDTO> getAllProducts(String name);
+    Page<ProductDTO> getAllProducts(String name, int page, int size);
 }

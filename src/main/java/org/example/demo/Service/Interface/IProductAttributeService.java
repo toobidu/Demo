@@ -1,8 +1,7 @@
 package org.example.demo.Service.Interface;
 
 import org.example.demo.Modal.DTO.Products.ProductAttributeDTO;
-
-import java.util.List;
+import org.springframework.data.domain.Page;
 
 public interface IProductAttributeService {
     ProductAttributeDTO createProductAttribute(ProductAttributeDTO productAttributeDTO);
@@ -13,7 +12,7 @@ public interface IProductAttributeService {
 
     ProductAttributeDTO getProductAttribute(Long id);
 
-    List<ProductAttributeDTO> getProductAttributes(Long productId);
+    Page<ProductAttributeDTO> getProductAttributes(Long productId, int page, int size);
 
-    List<ProductAttributeDTO> getAllProductAttributes();
+    Page<ProductAttributeDTO> getAllProductAttributes(int page, int size);
 }
