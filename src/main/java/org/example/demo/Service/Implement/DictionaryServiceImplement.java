@@ -10,6 +10,9 @@ import org.example.demo.Modal.Entity.Dictionaries.Dictionary;
 import org.example.demo.Modal.Entity.Dictionaries.DictionaryItem;
 import org.example.demo.Repository.DictionaryRepository;
 import org.example.demo.Service.Interface.IDictionaryService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -95,11 +98,11 @@ public class DictionaryServiceImplement implements IDictionaryService {
     }
 
     @Override
-    public List<DictionaryDTO> getAllDictionaries() {
-        log.info("Retrieving all dictionaries");
-        return dictionaryRepository.findAll().stream()
-                .map(dictionaryMapper::toDTO)
-                .collect(Collectors.toList());
+    public Page<DictionaryDTO> getAllDictionaries(int page, int size) {
+        log.info("Retrieving all dictionaries with paging - page: {}, size: {}", page, size);
+        Pageable pageable = PageRequest.of(page - 1, size);
+        Page<Dictionary> dictionaryPage = dictionaryRepository.findAll(pageable);
+        return dictionaryPage.map(dictionaryMapper::toDTO);
     }
 
     // DRY: dùng chung method để get dictionary với logging + exception

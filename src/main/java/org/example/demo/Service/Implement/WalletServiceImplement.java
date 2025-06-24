@@ -13,6 +13,9 @@ import org.example.demo.Repository.UserRepository;
 import org.example.demo.Repository.WalletRepository;
 import org.example.demo.Service.Interface.IWalletService;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -79,8 +82,6 @@ public class WalletServiceImplement implements IWalletService {
     @Override
     public void creditAdmin(BigDecimal amount) {
         log.info("Crediting {} to admin wallet", amount);
-
-        // Lấy admin đầu tiên trong hệ thống
         List<User> admins = userRepository.findByTypeAccount("admin");
 
         if (admins.isEmpty()) {
@@ -136,7 +137,15 @@ public class WalletServiceImplement implements IWalletService {
         return walletMapper.toDTO(getWalletByUserId(userId));
     }
 
-    // --- Hàm hỗ trợ ---
+    @Override
+    public Page<WalletDTO> getAllWallets(int page, int size) {
+        log.info("Retrieving all wallets with paging - page: {}, size: {}", page, size);
+        Pageable pageable = PageRequest.of(page - 1, size);
+        Page<Wallet> wallets = walletRepository.findAll(pageable);
+        return wallets.map(walletMapper::toDTO);
+    }
+
+    // Tách logic
 
     private Wallet getWalletByUserId(Long userId) {
         return walletRepository.findByUserId(userId)
@@ -152,4 +161,3 @@ public class WalletServiceImplement implements IWalletService {
         return admin;
     }
 }
-

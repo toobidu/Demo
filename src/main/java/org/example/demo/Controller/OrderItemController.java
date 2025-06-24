@@ -3,8 +3,11 @@ package org.example.demo.Controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.demo.Config.ApiResponse;
+import org.example.demo.Config.PageResponseDTO;
+import org.example.demo.Config.PageUtil;
 import org.example.demo.Modal.DTO.Orders.OrderItemDTO;
 import org.example.demo.Service.Interface.IOrderItemService;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -48,9 +51,12 @@ public class OrderItemController {
 
     @GetMapping
     @PreAuthorize("hasPermission(null, 'view_order_items')")
-    public ResponseEntity<ApiResponse<List<OrderItemDTO>>> getOrderItems(
-            @RequestParam(name = "orderId", required = false) Long orderId) {
-        List<OrderItemDTO> orderItems = orderItemService.getOrderItems(orderId);
-        return ResponseEntity.ok(ApiResponse.success("Lấy ra danh sách order item!", orderItems));
+    public ResponseEntity<ApiResponse<PageResponseDTO<OrderItemDTO>>> getOrderItems(
+            @RequestParam(name = "orderId", required = false) Long orderId,
+            @RequestParam(name = "page", defaultValue = "1") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size) {
+        Page<OrderItemDTO> orderItems = orderItemService.getOrderItems(orderId, page, size);
+        PageResponseDTO<OrderItemDTO> response = new PageUtil().toPageResponse(orderItems);
+        return ResponseEntity.ok(ApiResponse.success("Lấy ra danh sách order item!", response));
     }
 }

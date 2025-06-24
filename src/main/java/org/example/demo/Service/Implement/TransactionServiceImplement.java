@@ -14,9 +14,10 @@ import org.example.demo.Repository.TransactionRepository;
 import org.example.demo.Repository.WalletRepository;
 import org.example.demo.Service.Interface.ITransactionService;
 import org.example.demo.Service.Interface.IUserService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -83,26 +84,27 @@ public class TransactionServiceImplement implements ITransactionService {
     }
 
     @Override
-    public List<TransactionDTO> getAllTransactions() {
-        return transactionRepository.findAll().stream()
-                .map(transactionMapper::toDTO)
-                .collect(java.util.stream.Collectors.toList());
+    public Page<TransactionDTO> getAllTransactions(int page, int size) {
+        log.info("Getting all transactions with paging - page: {}, size: {}", page, size);
+        Pageable pageable = PageRequest.of(page - 1, size);
+        Page<Transaction> transactions = transactionRepository.findAll(pageable);
+        return transactions.map(transactionMapper::toDTO);
     }
 
     @Override
-    public List<TransactionDTO> getTransactionsByWalletId(Long walletId) {
-        List<Transaction> transactions = transactionRepository.findByFromWalletId(walletId);
-        return transactions.stream()
-                .map(transactionMapper::toDTO)
-                .collect(java.util.stream.Collectors.toList());
+    public Page<TransactionDTO> getTransactionsByWalletId(Long walletId, int page, int size) {
+        log.info("Getting transactions for wallet ID: {} with paging - page: {}, size: {}", walletId, page, size);
+        Pageable pageable = PageRequest.of(page - 1, size);
+        Page<Transaction> transactions = transactionRepository.findByFromWalletId(walletId, pageable);
+        return transactions.map(transactionMapper::toDTO);
     }
 
     @Override
-    public List<TransactionDTO> getTransactionsByUserId(Long userId) {
-        List<Transaction> transactions = transactionRepository.findByFromWalletUserIdOrToWalletUserId(userId, userId);
-        return transactions.stream()
-                .map(transactionMapper::toDTO)
-                .collect(java.util.stream.Collectors.toList());
+    public Page<TransactionDTO> getTransactionsByUserId(Long userId, int page, int size) {
+        log.info("Getting transactions for user ID: {} with paging - page: {}, size: {}", userId, page, size);
+        Pageable pageable = PageRequest.of(page - 1, size);
+        Page<Transaction> transactions = transactionRepository.findByFromWalletUserIdOrToWalletUserId(userId, userId, pageable);
+        return transactions.map(transactionMapper::toDTO);
     }
 
     private void updateWalletBalances(Transaction transaction) {

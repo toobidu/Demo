@@ -1,8 +1,7 @@
 package org.example.demo.Service.Interface;
 
 import org.example.demo.Modal.DTO.Dictionaries.DictionaryDTO;
-
-import java.util.List;
+import org.springframework.data.domain.Page;
 
 public interface IDictionaryService {
     DictionaryDTO createDictionary(DictionaryDTO dictionaryDTO);
@@ -13,5 +12,5 @@ public interface IDictionaryService {
 
     DictionaryDTO getDictionary(Long id);
 
-    List<DictionaryDTO> getAllDictionaries();
+    Page<DictionaryDTO> getAllDictionaries(int page, int size);
 }

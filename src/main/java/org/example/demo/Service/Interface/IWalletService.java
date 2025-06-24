@@ -1,6 +1,7 @@
 package org.example.demo.Service.Interface;
 
 import org.example.demo.Modal.DTO.Finance.WalletDTO;
+import org.springframework.data.domain.Page;
 
 import java.math.BigDecimal;
 
@@ -16,4 +17,6 @@ public interface IWalletService {
     void refundOnCancel(Long userId, BigDecimal amount);
 
     WalletDTO getWallet(Long userId);
+
+    Page<WalletDTO> getAllWallets(int page, int size);
 }

@@ -1,14 +1,16 @@
 package org.example.demo.Repository;
 
 import org.example.demo.Modal.Entity.Finance.Transaction;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-
 @Repository
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
-    List<Transaction> findByFromWalletId(Long walletId);
+    Page<Transaction> findByFromWalletId(Long walletId, Pageable pageable);
 
-    List<Transaction> findByFromWalletUserIdOrToWalletUserId(Long userIdFrom, Long userIdTo);
+    Page<Transaction> findByFromWalletUserIdOrToWalletUserId(Long fromUserId, Long toUserId, Pageable pageable);
+
+    Page<Transaction> findAll(Pageable pageable);
 }

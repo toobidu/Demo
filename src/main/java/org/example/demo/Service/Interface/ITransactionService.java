@@ -1,17 +1,16 @@
 package org.example.demo.Service.Interface;
 
 import org.example.demo.Modal.DTO.Finance.TransactionDTO;
-
-import java.util.List;
+import org.springframework.data.domain.Page;
 
 public interface ITransactionService {
     TransactionDTO createTransaction(TransactionDTO transactionDTO);
 
     TransactionDTO getTransactionById(Long id);
 
-    List<TransactionDTO> getAllTransactions();
+    Page<TransactionDTO> getAllTransactions(int page, int size);
 
-    List<TransactionDTO> getTransactionsByWalletId(Long walletId);
+    Page<TransactionDTO> getTransactionsByWalletId(Long walletId, int page, int size);
 
-    List<TransactionDTO> getTransactionsByUserId(Long userId);
+    Page<TransactionDTO> getTransactionsByUserId(Long userId, int page, int size);
 }

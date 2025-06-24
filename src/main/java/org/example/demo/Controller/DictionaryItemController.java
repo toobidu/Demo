@@ -3,12 +3,13 @@ package org.example.demo.Controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.demo.Config.ApiResponse;
+import org.example.demo.Config.PageResponseDTO;
+import org.example.demo.Config.PageUtil;
 import org.example.demo.Modal.DTO.Dictionaries.DictionaryItemDTO;
 import org.example.demo.Service.Interface.IDictionaryItemService;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/dictionary-items")
@@ -42,9 +43,12 @@ public class DictionaryItemController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<DictionaryItemDTO>>> getDictionaryItems(
-            @RequestParam(name = "dictionaryId", required = false) Long dictionaryId) {
-        List<DictionaryItemDTO> items = dictionaryItemService.getDictionaryItems(dictionaryId);
-        return ResponseEntity.ok(ApiResponse.success("Lấy ra danh sách dictionary item!", items));
+    public ResponseEntity<ApiResponse<PageResponseDTO<DictionaryItemDTO>>> getDictionaryItems(
+            @RequestParam(name = "dictionaryId", required = false) Long dictionaryId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Page<DictionaryItemDTO> itemsPage = dictionaryItemService.getDictionaryItems(dictionaryId, page, size);
+        PageResponseDTO<DictionaryItemDTO> response = new PageUtil().toPageResponse(itemsPage);
+        return ResponseEntity.ok(ApiResponse.success("Lấy ra danh sách dictionary item!", response));
     }
 }

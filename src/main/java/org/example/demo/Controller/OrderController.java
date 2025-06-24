@@ -3,13 +3,14 @@ package org.example.demo.Controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.demo.Config.ApiResponse;
+import org.example.demo.Config.PageResponseDTO;
+import org.example.demo.Config.PageUtil;
 import org.example.demo.Modal.DTO.Orders.OrderDTO;
 import org.example.demo.Service.Interface.IOrderService;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("api/v1/orders")
@@ -53,19 +54,32 @@ public class OrderController {
 
     @GetMapping("/user/{userId}")
     @PreAuthorize("hasPermission(null, 'view_user_orders')")
-    public ResponseEntity<ApiResponse<List<OrderDTO>>> getOrdersForUser(@PathVariable Long userId) {
-        return ResponseEntity.ok(ApiResponse.success("Đơn hàng đã được truy vấn thành công tới người dùng!", orderService.getOrdersForUser(userId)));
+    public ResponseEntity<ApiResponse<PageResponseDTO<OrderDTO>>> getOrdersForUser(
+            @PathVariable Long userId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Page<OrderDTO> ordersPage = orderService.getOrdersForUser(userId, page, size);
+        PageResponseDTO<OrderDTO> response = new PageUtil().toPageResponse(ordersPage);
+        return ResponseEntity.ok(ApiResponse.success("Đơn hàng đã được truy vấn thành công tới người dùng!", response));
     }
 
     @GetMapping("/admin")
     @PreAuthorize("hasPermission(null, 'view_admin_orders')")
-    public ResponseEntity<ApiResponse<List<OrderDTO>>> getOrdersForAdmin() {
-        return ResponseEntity.ok(ApiResponse.success("Đơn hàng đã được truy vấn thành công tới admin!", orderService.getOrdersForAdmin()));
+    public ResponseEntity<ApiResponse<PageResponseDTO<OrderDTO>>> getOrdersForAdmin(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Page<OrderDTO> ordersPage = orderService.getOrdersForAdmin(page, size);
+        PageResponseDTO<OrderDTO> response = new PageUtil().toPageResponse(ordersPage);
+        return ResponseEntity.ok(ApiResponse.success("Đơn hàng đã được truy vấn thành công tới admin!", response));
     }
 
     @GetMapping("/print-house")
     @PreAuthorize("hasPermission(null, 'view_printhouse_orders')")
-    public ResponseEntity<ApiResponse<List<OrderDTO>>> getOrdersForPrintHouse() {
-        return ResponseEntity.ok(ApiResponse.success("Đơn hàng đã được truy vấn thành công tới nhà in!", orderService.getOrdersForPrintHouse()));
+    public ResponseEntity<ApiResponse<PageResponseDTO<OrderDTO>>> getOrdersForPrintHouse(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Page<OrderDTO> ordersPage = orderService.getOrdersForPrintHouse(page, size);
+        PageResponseDTO<OrderDTO> response = new PageUtil().toPageResponse(ordersPage);
+        return ResponseEntity.ok(ApiResponse.success("Đơn hàng đã được truy vấn thành công tới nhà in!", response));
     }
 }

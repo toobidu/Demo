@@ -1,8 +1,7 @@
 package org.example.demo.Service.Interface;
 
 import org.example.demo.Modal.DTO.Orders.OrderDTO;
-
-import java.util.List;
+import org.springframework.data.domain.Page;
 
 public interface IOrderService {
     OrderDTO createOrder(OrderDTO orderDTO);
@@ -15,9 +14,9 @@ public interface IOrderService {
 
     OrderDTO getOrderById(Long id);
 
-    List<OrderDTO> getOrdersForUser(Long userId);
+    Page<OrderDTO> getOrdersForUser(Long userId, int page, int size);
 
-    List<OrderDTO> getOrdersForAdmin();
+    Page<OrderDTO> getOrdersForAdmin(int page, int size);
 
-    List<OrderDTO> getOrdersForPrintHouse();
+    Page<OrderDTO> getOrdersForPrintHouse(int page, int size);
 }

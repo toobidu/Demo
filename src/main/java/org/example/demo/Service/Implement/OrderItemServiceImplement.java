@@ -8,21 +8,20 @@ import org.example.demo.Modal.DTO.Orders.OrderItemDTO;
 import org.example.demo.Modal.Entity.Orders.Order;
 import org.example.demo.Modal.Entity.Orders.OrderItem;
 import org.example.demo.Modal.Entity.Products.ProductPrice;
-import org.example.demo.Modal.Entity.Users.User;
 import org.example.demo.Repository.OrderItemRepository;
 import org.example.demo.Repository.OrderRepository;
 import org.example.demo.Repository.ProductPriceRepository;
-import org.example.demo.Repository.UserRepository;
 import org.example.demo.Service.Interface.IOrderItemService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -113,14 +112,13 @@ public class OrderItemServiceImplement implements IOrderItemService {
     }
 
     @Override
-    public List<OrderItemDTO> getOrderItems(Long orderId) {
-        log.info("Retrieving order items for orderId: {}", orderId);
-        List<OrderItem> items = (orderId != null)
-                ? orderItemRepository.findByOrderId(orderId)
-                : orderItemRepository.findAll();
-        return items.stream()
-                .map(orderItemMapper::toDTO)
-                .collect(Collectors.toList());
+    public Page<OrderItemDTO> getOrderItems(Long orderId, int page, int size) {
+        log.info("Retrieving order items for orderId: {} with paging", orderId);
+        Pageable pageable = PageRequest.of(page - 1, size);
+        Page<OrderItem> items = (orderId != null)
+                ? orderItemRepository.findByOrderId(orderId, pageable)
+                : orderItemRepository.findAll(pageable);
+        return items.map(orderItemMapper::toDTO);
     }
 
     // --- Private methods ---
@@ -136,10 +134,12 @@ public class OrderItemServiceImplement implements IOrderItemService {
     }
 
     private void updateOrderTotal(Order order) {
-        List<OrderItem> items = orderItemRepository.findByOrderId(order.getId());
-        BigDecimal totalAmount = items.stream()
+        // Lấy tất cả các items của order và tính tổng
+        Page<OrderItem> itemsPage = orderItemRepository.findByOrderId(order.getId(), PageRequest.of(0, Integer.MAX_VALUE));
+        BigDecimal totalAmount = itemsPage.getContent().stream()
                 .map(item -> item.getOriginalPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+
         order.setTotalAmount(totalAmount);
         orderRepository.save(order);
         log.info("Updated total for order {}: {}", order.getId(), totalAmount);

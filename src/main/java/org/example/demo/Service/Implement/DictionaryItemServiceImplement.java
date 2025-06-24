@@ -10,10 +10,10 @@ import org.example.demo.Modal.Entity.Dictionaries.DictionaryItem;
 import org.example.demo.Repository.DictionaryItemRepository;
 import org.example.demo.Repository.DictionaryRepository;
 import org.example.demo.Service.Interface.IDictionaryItemService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -89,15 +89,12 @@ public class DictionaryItemServiceImplement implements IDictionaryItemService {
     }
 
     @Override
-    public List<DictionaryItemDTO> getDictionaryItems(Long dictionaryId) {
-        log.info("Retrieving dictionary items for dictionaryId: {}", dictionaryId);
-
-        List<DictionaryItem> items = (dictionaryId != null)
-                ? dictionaryItemRepository.findByDictionary_Id(dictionaryId)
-                : dictionaryItemRepository.findAll();
-
-        return items.stream()
-                .map(dictionaryItemMapper::toDTO)
-                .collect(Collectors.toList());
+    public Page<DictionaryItemDTO> getDictionaryItems(Long dictionaryId, int page, int size) {
+        log.info("Retrieving dictionary items for dictionaryId: {} with paging", dictionaryId);
+        Pageable pageable = PageRequest.of(page - 1, size);
+        Page<DictionaryItem> items = (dictionaryId != null)
+                ? dictionaryItemRepository.findByDictionary_Id(dictionaryId, pageable)
+                : dictionaryItemRepository.findAll(pageable);
+        return items.map(dictionaryItemMapper::toDTO);
     }
 }

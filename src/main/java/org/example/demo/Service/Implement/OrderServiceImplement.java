@@ -14,6 +14,9 @@ import org.example.demo.Modal.Entity.Users.User;
 import org.example.demo.Repository.*;
 import org.example.demo.Service.Interface.IOrderService;
 import org.example.demo.Service.Interface.IWalletService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -141,24 +144,27 @@ public class OrderServiceImplement implements IOrderService {
     }
 
     @Override
-    public List<OrderDTO> getOrdersForUser(Long userId) {
-        log.info("Retrieving orders for userId: {}", userId);
-        return orderRepository.findByUserId(userId)
-                .stream().map(this::toOrderDTOWithItems).collect(Collectors.toList());
+    public Page<OrderDTO> getOrdersForUser(Long userId, int page, int size) {
+        log.info("Retrieving orders for userId: {} with paging", userId);
+        Pageable pageable = PageRequest.of(page - 1, size);
+        Page<Order> orders = orderRepository.findByUserId(userId, pageable);
+        return orders.map(this::toOrderDTOWithItems);
     }
 
     @Override
-    public List<OrderDTO> getOrdersForAdmin() {
-        log.info("Retrieving orders for admin");
-        return orderRepository.findAllOrdersForAdmin()
-                .stream().map(this::toOrderDTOWithItems).collect(Collectors.toList());
+    public Page<OrderDTO> getOrdersForAdmin(int page, int size) {
+        log.info("Retrieving orders for admin with paging");
+        Pageable pageable = PageRequest.of(page - 1, size);
+        Page<Order> orders = orderRepository.findAllOrdersForAdmin(pageable);
+        return orders.map(this::toOrderDTOWithItems);
     }
 
     @Override
-    public List<OrderDTO> getOrdersForPrintHouse() {
-        log.info("Retrieving orders for print house");
-        return orderRepository.findOrdersForPrintHouse()
-                .stream().map(this::toOrderDTOWithItems).collect(Collectors.toList());
+    public Page<OrderDTO> getOrdersForPrintHouse(int page, int size) {
+        log.info("Retrieving orders for print house with paging");
+        Pageable pageable = PageRequest.of(page - 1, size);
+        Page<Order> orders = orderRepository.findOrdersForPrintHouse(pageable);
+        return orders.map(this::toOrderDTOWithItems);
     }
 
     //Các hàm xử lý tài chính

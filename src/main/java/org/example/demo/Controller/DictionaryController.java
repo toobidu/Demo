@@ -3,12 +3,13 @@ package org.example.demo.Controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.demo.Config.ApiResponse;
+import org.example.demo.Config.PageResponseDTO;
+import org.example.demo.Config.PageUtil;
 import org.example.demo.Modal.DTO.Dictionaries.DictionaryDTO;
 import org.example.demo.Service.Interface.IDictionaryService;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/dictionaries")
@@ -42,8 +43,11 @@ public class DictionaryController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<DictionaryDTO>>> getAllDictionaries() {
-        List<DictionaryDTO> dictionaries = dictionaryService.getAllDictionaries();
-        return ResponseEntity.ok(ApiResponse.success("Lấy ra danh sách dictionary!", dictionaries));
+    public ResponseEntity<ApiResponse<PageResponseDTO<DictionaryDTO>>> getAllDictionaries(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Page<DictionaryDTO> dictionaryPage = dictionaryService.getAllDictionaries(page, size);
+        PageResponseDTO<DictionaryDTO> response = new PageUtil().toPageResponse(dictionaryPage);
+        return ResponseEntity.ok(ApiResponse.success("Lấy ra danh sách dictionary!", response));
     }
 }
