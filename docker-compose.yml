@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  postgres:
+    build: .
+    container_name: demo
+    environment:
+      POSTGRES_USER: demo
+      POSTGRES_PASSWORD: demo
+      POSTGRES_DB: demo
+    ports:
+      - "5439:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+    command: redis-server --requirepass demo
+    environment:
+      - REDIS_PASSWORD=demo
+    volumes:
+      - redis_data:/data
+    restart: always
+
+volumes:
+  postgres_data:
+  redis_data:
