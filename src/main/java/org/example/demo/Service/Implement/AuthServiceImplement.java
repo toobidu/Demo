@@ -145,7 +145,7 @@ public class AuthServiceImplement implements IAuthService {
     }
 
     private void createWalletIfNotExists(User user) {
-        if (!walletRepository.existsById(user.getId())) {
+        if (!walletRepository.existsByUserId(user.getId())) {
             Wallet wallet = new Wallet();
             wallet.setUser(user);
             wallet.setBalance(BigDecimal.ZERO);

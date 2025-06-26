@@ -252,8 +252,7 @@ public class OrderServiceImplement implements IOrderService {
 
     private OrderDTO toOrderDTOWithItems(Order order) {
         OrderDTO dto = orderMapper.toDTO(order);
-        Pageable pageable = PageRequest.of(0, 10); // Example Pageable instance
-        dto.setOrderItems(mapOrderItems(orderItemRepository.findByOrderId(order.getId(), pageable).getContent()));
+        dto.setOrderItems(mapOrderItems(orderItemRepository.findByOrderId(order.getId())));
         return dto;
     }
 
