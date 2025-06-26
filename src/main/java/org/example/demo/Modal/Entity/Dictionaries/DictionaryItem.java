@@ -12,13 +12,12 @@ import lombok.NoArgsConstructor;
 @Data
 public class DictionaryItem {
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "dictionary_id")
-    private Dictionary dictionary;
+    @Column(name = "dictionary_id")
+    private Long dictionaryId;
 
     @Column(name = "code")
     private String code;

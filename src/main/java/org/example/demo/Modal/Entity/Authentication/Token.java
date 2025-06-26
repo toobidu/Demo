@@ -18,16 +18,15 @@ import java.time.LocalDateTime;
 @Setter
 public class Token {
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Long id;
 
     @Column(name = "refresh_token", nullable = false, unique = true)
     private String refreshToken;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @Column(name = "user_id")
+    private Long userId;
 
     @Column(name = "created_at", nullable = false)
     @CreationTimestamp
