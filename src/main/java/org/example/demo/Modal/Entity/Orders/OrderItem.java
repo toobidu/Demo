@@ -4,8 +4,6 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.example.demo.Modal.Entity.Products.Product;
-import org.example.demo.Modal.Entity.Products.ProductPrice;
 
 import java.math.BigDecimal;
 

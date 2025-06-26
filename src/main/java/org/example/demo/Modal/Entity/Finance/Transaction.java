@@ -4,8 +4,6 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.example.demo.Modal.Entity.Orders.Order;
-import org.example.demo.Modal.Entity.Users.User;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.math.BigDecimal;
@@ -18,17 +16,15 @@ import java.time.LocalDateTime;
 @Data
 public class Transaction {
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "from_wallet_id")
-    private Wallet fromWallet;
+    @Column(name = "from_wallet_id")
+    private Long fromWalletId;
 
-    @ManyToOne
-    @JoinColumn(name = "to_wallet_id")
-    private Wallet toWallet;
+    @Column(name = "to_wallet_id")
+    private Long toWalletId;
 
     @Column(name = "amount", nullable = false)
     private BigDecimal amount;
@@ -36,13 +32,11 @@ public class Transaction {
     @Column(name = "transaction_type", nullable = false)
     private String transactionType; // deposit, order_payment, payment_to_print_house
 
-    @ManyToOne
-    @JoinColumn(name = "admin_id")
-    private User admin;
+    @Column(name = "admin_id")
+    private Long adminId;
 
-    @ManyToOne
-    @JoinColumn(name = "order_id")
-    private Order order;
+    @Column(name = "order_id")
+    private Long orderId;
 
     @Column(name = "created_at", nullable = false)
     @CreationTimestamp
