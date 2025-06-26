@@ -32,10 +32,12 @@ public class RolePermissionServiceImplement implements IRolePermissionService {
     @Override
     @Transactional
     public void addPermissionToRole(Long roleId, Long permissionId) {
-        Role role = roleRepository.findById(roleId).orElseThrow();
-        Permission permission = permissionRepository.findById(permissionId).orElseThrow();
+        log.info("Adding permission {} to role {}", permissionId, roleId);
+        Role role = roleRepository.findById(roleId)
+                .orElseThrow(() -> new UserFriendlyException("Role not found"));
+        Permission permission = permissionRepository.findById(permissionId)
+                .orElseThrow(() -> new UserFriendlyException("Permission not found"));
 
-        // ✅ Kiểm tra phân quyền trước khi tiếp tục
         if (!canCurrentUserModifyRole(role.getRoleName())) {
             throw new UserFriendlyException("Không có quyền thao tác với role này");
         }
@@ -43,49 +45,38 @@ public class RolePermissionServiceImplement implements IRolePermissionService {
         RolePermissionId id = new RolePermissionId(roleId, permissionId);
         RolePermission rolePermission = new RolePermission();
         rolePermission.setId(id);
-        rolePermission.setRole(role);
-        rolePermission.setPermission(permission);
         rolePermissionRepository.save(rolePermission);
 
-        String permissionName = permission.getPermissionName();
-        var userIds = userRoleRepository.findUserIdsByRoleId(roleId);
-        if (userIds != null && !userIds.isEmpty()) {
-            for (Long userId : userIds) {
-                redisService.addPermissions(userId, Set.of(permissionName));
-            }
-        }
+        updateRedisPermissions(roleId, Set.of(permission.getPermissionName()), true);
     }
 
     @Override
     @Transactional
     public void removePermissionFromRole(Long roleId, Long permissionId) {
-        Role role = roleRepository.findById(roleId).orElseThrow();
+        log.info("Removing permission {} from role {}", permissionId, roleId);
+        Role role = roleRepository.findById(roleId)
+                .orElseThrow(() -> new UserFriendlyException("Role not found"));
 
-        // Kiểm tra phân quyền trước khi xóa
         if (!canCurrentUserModifyRole(role.getRoleName())) {
             throw new UserFriendlyException("Không có quyền thao tác với role này");
         }
 
+        Permission permission = permissionRepository.findById(permissionId)
+                .orElseThrow(() -> new UserFriendlyException("Permission not found"));
+
         RolePermissionId id = new RolePermissionId(roleId, permissionId);
         rolePermissionRepository.deleteById(id);
 
-        Permission permission = permissionRepository.findById(permissionId).orElseThrow();
-        String permissionName = permission.getPermissionName();
-
-        var userIds = userRoleRepository.findUserIdsByRoleId(roleId);
-        if (userIds != null && !userIds.isEmpty()) {
-            for (Long userId : userIds) {
-                redisService.removePermissions(userId, Set.of(permissionName));
-            }
-        }
+        updateRedisPermissions(roleId, Set.of(permission.getPermissionName()), false);
     }
 
     @Override
     @Transactional
     public void addMorePermissionsToRole(Long roleId, List<Long> permissionIds) {
-        Role role = roleRepository.findById(roleId).orElseThrow();
+        log.info("Adding multiple permissions to role {}", roleId);
+        Role role = roleRepository.findById(roleId)
+                .orElseThrow(() -> new UserFriendlyException("Role not found"));
 
-        // Kiểm tra quyền trước khi thực hiện
         if (!canCurrentUserModifyRole(role.getRoleName())) {
             throw new UserFriendlyException("Không có quyền thao tác với role này");
         }
@@ -93,53 +84,62 @@ public class RolePermissionServiceImplement implements IRolePermissionService {
         Set<String> permissionsToAdd = new HashSet<>();
 
         for (Long permissionId : permissionIds) {
-            Permission permission = permissionRepository.findById(permissionId).orElseThrow();
+            Permission permission = permissionRepository.findById(permissionId)
+                    .orElseThrow(() -> new UserFriendlyException("Permission not found"));
+
             RolePermissionId id = new RolePermissionId(roleId, permissionId);
             if (!rolePermissionRepository.existsById(id)) {
                 RolePermission rolePermission = new RolePermission();
                 rolePermission.setId(id);
-                rolePermission.setRole(role);
-                rolePermission.setPermission(permission);
                 rolePermissionRepository.save(rolePermission);
+                permissionsToAdd.add(permission.getPermissionName());
             }
-            permissionsToAdd.add(permission.getPermissionName());
         }
 
-        var userIds = userRoleRepository.findUserIdsByRoleId(roleId);
-        if (userIds != null && !permissionsToAdd.isEmpty()) {
-            for (Long userId : userIds) {
-                redisService.addPermissions(userId, permissionsToAdd);
-            }
+        if (!permissionsToAdd.isEmpty()) {
+            updateRedisPermissions(roleId, permissionsToAdd, true);
         }
     }
 
     @Override
     @Transactional
     public void removeMorePermissionsFromRole(Long roleId, List<Long> permissionIds) {
-        Role role = roleRepository.findById(roleId).orElseThrow();
+        log.info("Removing multiple permissions from role {}", roleId);
+        Role role = roleRepository.findById(roleId)
+                .orElseThrow(() -> new UserFriendlyException("Role not found"));
 
-        // ✅ Kiểm tra phân quyền trước khi xóa nhiều quyền
         if (!canCurrentUserModifyRole(role.getRoleName())) {
             throw new UserFriendlyException("Không có quyền thao tác với role này");
         }
 
         Set<String> permissionsToRemove = new HashSet<>();
         for (Long permissionId : permissionIds) {
-            Permission permission = permissionRepository.findById(permissionId).orElseThrow();
+            Permission permission = permissionRepository.findById(permissionId)
+                    .orElseThrow(() -> new UserFriendlyException("Permission not found"));
+
             RolePermissionId id = new RolePermissionId(roleId, permissionId);
             rolePermissionRepository.deleteById(id);
             permissionsToRemove.add(permission.getPermissionName());
         }
 
+        if (!permissionsToRemove.isEmpty()) {
+            updateRedisPermissions(roleId, permissionsToRemove, false);
+        }
+    }
+
+    private void updateRedisPermissions(Long roleId, Set<String> permissions, boolean isAdd) {
         var userIds = userRoleRepository.findUserIdsByRoleId(roleId);
-        if (userIds != null && !permissionsToRemove.isEmpty()) {
+        if (userIds != null && !permissions.isEmpty()) {
             for (Long userId : userIds) {
-                redisService.removePermissions(userId, permissionsToRemove);
+                if (isAdd) {
+                    redisService.addPermissions(userId, permissions);
+                } else {
+                    redisService.removePermissions(userId, permissions);
+                }
             }
         }
     }
 
-    // Hàm kiểm tra phân quyền người dùng hiện tại
     private boolean canCurrentUserModifyRole(String targetRoleName) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {
@@ -161,21 +161,16 @@ public class RolePermissionServiceImplement implements IRolePermissionService {
 
             targetRoleName = targetRoleName.toUpperCase();
 
-            //Super admin có toàn quyền
             if ("SUPER_ADMIN".equalsIgnoreCase(userRole)) {
                 return true;
             }
 
-            //Admin chỉ được thao tác với SALE & PRINTER_HOUSE
             if ("ADMIN".equalsIgnoreCase(userRole)) {
                 Set<String> allowedRolesForAdmin = Set.of("SALE", "PRINTER_HOUSE");
-
                 return allowedRolesForAdmin.contains(targetRoleName);
             }
 
-            //Người dùng thường không được phép thao tác
             return false;
-
         } catch (NumberFormatException e) {
             return false;
         }

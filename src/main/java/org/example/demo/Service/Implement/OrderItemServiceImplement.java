@@ -8,9 +8,11 @@ import org.example.demo.Modal.DTO.Orders.OrderItemDTO;
 import org.example.demo.Modal.Entity.Orders.Order;
 import org.example.demo.Modal.Entity.Orders.OrderItem;
 import org.example.demo.Modal.Entity.Products.ProductPrice;
+import org.example.demo.Modal.Entity.Users.User;
 import org.example.demo.Repository.OrderItemRepository;
 import org.example.demo.Repository.OrderRepository;
 import org.example.demo.Repository.ProductPriceRepository;
+import org.example.demo.Repository.UserRepository;
 import org.example.demo.Service.Interface.IOrderItemService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -19,6 +21,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.Map;
@@ -32,34 +35,40 @@ public class OrderItemServiceImplement implements IOrderItemService {
     private final OrderRepository orderRepository;
     private final ProductPriceRepository productPriceRepository;
     private final OrderItemMapper orderItemMapper;
+    private final UserRepository userRepository;
 
     @Override
+    @Transactional
     public OrderItemDTO createOrderItem(OrderItemDTO dto) {
         log.info("Creating order item for orderId: {}", dto.getOrderId());
 
-        // 1. Lấy userId từ JWT (từ sub)
         Long currentUserId = getCurrentUserIdFromSecurityContext();
-
-        // 2. Tìm đơn hàng
         Order order = getOrderById(dto.getOrderId());
 
-        // 3. Kiểm tra giá sản phẩm (nếu có yêu cầu theo hạng người dùng)
+        // Verify order belongs to current user
+        if (!order.getUserId().equals(currentUserId)) {
+            throw new UserFriendlyException("Order does not belong to current user");
+        }
+
+        // Verify order status
+        if (!"pending_payment".equals(order.getStatus())) {
+            throw new UserFriendlyException("Can only modify order in pending payment status");
+        }
+
         ProductPrice price = getProductPriceById(dto.getProductPriceId());
-        if (!price.getRank().equals(order.getUser().getRank())) {
+        String userRank = getUserRank(currentUserId);
+        if (!price.getRank().equals(userRank)) {
             throw new UserFriendlyException("Invalid product price for user rank");
         }
 
-        // 4. Tạo mới OrderItem
         OrderItem item = new OrderItem();
-        item.setOrder(order);
-        item.setProduct(price.getProduct());
-        item.setProductPrice(price);
+        item.setOrderId(order.getId());
+        item.setProductId(price.getProductId());
+        item.setProductPriceId(price.getId());
         item.setQuantity(dto.getQuantity());
         item.setOriginalPrice(price.getPrice());
 
         item = orderItemRepository.save(item);
-
-        // 5. Cập nhật tổng tiền đơn hàng
         updateOrderTotal(order);
 
         log.info("Order item created with ID: {}", item.getId());
@@ -67,38 +76,63 @@ public class OrderItemServiceImplement implements IOrderItemService {
     }
 
     @Override
+    @Transactional
     public OrderItemDTO updateOrderItem(Long id, OrderItemDTO dto) {
         log.info("Updating order item ID: {}", id);
 
         OrderItem item = orderItemRepository.findById(id)
                 .orElseThrow(() -> new UserFriendlyException("Order item not found"));
 
+        Order order = getOrderById(item.getOrderId());
+        Long currentUserId = getCurrentUserIdFromSecurityContext();
+
+        if (!order.getUserId().equals(currentUserId)) {
+            throw new UserFriendlyException("Order does not belong to current user");
+        }
+
+        if (!"pending_payment".equals(order.getStatus())) {
+            throw new UserFriendlyException("Can only modify order in pending payment status");
+        }
+
         ProductPrice price = getProductPriceById(dto.getProductPriceId());
-        if (!price.getRank().equals(item.getOrder().getUser().getRank())) {
+        String userRank = getUserRank(currentUserId);
+        if (!price.getRank().equals(userRank)) {
             throw new UserFriendlyException("Invalid product price for user rank");
         }
 
-        item.setProductPrice(price);
-        item.setProduct(price.getProduct());
+        item.setProductPriceId(price.getId());
+        item.setProductId(price.getProductId());
         item.setQuantity(dto.getQuantity());
         item.setOriginalPrice(price.getPrice());
 
         item = orderItemRepository.save(item);
-        updateOrderTotal(item.getOrder());
+        updateOrderTotal(order);
 
         log.info("Order item updated: ID {}", id);
         return orderItemMapper.toDTO(item);
     }
 
     @Override
+    @Transactional
     public void deleteOrderItem(Long id) {
         log.info("Deleting order item ID: {}", id);
 
         OrderItem item = orderItemRepository.findById(id)
                 .orElseThrow(() -> new UserFriendlyException("Order item not found"));
 
+        Order order = getOrderById(item.getOrderId());
+        Long currentUserId = getCurrentUserIdFromSecurityContext();
+
+        if (!order.getUserId().equals(currentUserId)) {
+            throw new UserFriendlyException("Order does not belong to current user");
+        }
+
+        if (!"pending_payment".equals(order.getStatus())) {
+            throw new UserFriendlyException("Can only modify order in pending payment status");
+        }
+
         orderItemRepository.deleteById(id);
-        updateOrderTotal(item.getOrder());
+        updateOrderTotal(order);
 
         log.info("Order item deleted: ID {}", id);
     }
@@ -121,8 +155,6 @@ public class OrderItemServiceImplement implements IOrderItemService {
         return items.map(orderItemMapper::toDTO);
     }
 
-    // --- Private methods ---
-
     private Order getOrderById(Long orderId) {
         return orderRepository.findById(orderId)
                 .orElseThrow(() -> new UserFriendlyException("Order not found"));
@@ -133,8 +165,13 @@ public class OrderItemServiceImplement implements IOrderItemService {
                 .orElseThrow(() -> new UserFriendlyException("Product price not found"));
     }
 
+    private String getUserRank(Long userId) {
+        return userRepository.findById(userId)
+                .map(User::getRank)
+                .orElseThrow(() -> new UserFriendlyException("User not found"));
+    }
+
     private void updateOrderTotal(Order order) {
-        // Lấy tất cả các items của order và tính tổng
         Page<OrderItem> itemsPage = orderItemRepository.findByOrderId(order.getId(), PageRequest.of(0, Integer.MAX_VALUE));
         BigDecimal totalAmount = itemsPage.getContent().stream()
                 .map(item -> item.getOriginalPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
@@ -150,19 +187,16 @@ public class OrderItemServiceImplement implements IOrderItemService {
         if (auth != null && auth.isAuthenticated()) {
             Object principal = auth.getPrincipal();
 
-            // Trường hợp principal là UserDetails
             if (principal instanceof UserDetails userDetails) {
-                String username = userDetails.getUsername(); // Đây chính là userId dạng chuỗi
                 try {
-                    return Long.parseLong(username); // Chuyển về Long
+                    return Long.parseLong(userDetails.getUsername());
                 } catch (NumberFormatException e) {
                     throw new UserFriendlyException("Invalid user ID in token");
                 }
             }
 
-            // Trường hợp principal là Map chứa claims (JWT)
             if (principal instanceof Map<?, ?> claims) {
-                Object userIdObj = claims.get("sub"); // sub là userId
+                Object userIdObj = claims.get("sub");
                 if (userIdObj instanceof String str) {
                     try {
                         return Long.valueOf(str);
@@ -172,10 +206,8 @@ public class OrderItemServiceImplement implements IOrderItemService {
                 } else if (userIdObj instanceof Number number) {
                     return number.longValue();
                 }
-                throw new UserFriendlyException("User ID not found in token");
             }
 
-            // Trường hợp principal là String -> userId dưới dạng chuỗi (trong JWT)
             if (principal instanceof String str) {
                 try {
                     return Long.valueOf(str);

@@ -8,6 +8,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface DictionaryItemRepository extends JpaRepository<DictionaryItem, Long> {
-    Page<DictionaryItem> findByDictionary_Id(Long dictionaryId, Pageable pageable);
-    Page<DictionaryItem> findAll(Pageable pageable);
+    Page<DictionaryItem> findByDictionaryId(Long dictionaryId, Pageable pageable);
 }

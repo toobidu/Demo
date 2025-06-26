@@ -26,13 +26,13 @@ public class ProductAttributeImplement implements IProductAttributeService {
 
     @Override
     public ProductAttributeDTO createProductAttribute(ProductAttributeDTO productAttributeDTO) {
-        log.info("Creating product attribute for productId: {}, name: {}",
+        log.info("Creating product attribute for productId: {}, key: {}",
                 productAttributeDTO.getProductId(), productAttributeDTO.getAttributeKey());
 
-        Product product = getProductById(productAttributeDTO.getProductId());
+        getProductById(productAttributeDTO.getProductId());
 
         ProductAttribute attribute = productAttributeMapper.toEntity(productAttributeDTO);
-        attribute.setProduct(product);
+        attribute.setProductId(productAttributeDTO.getProductId());
         attribute = productAttributeRepository.save(attribute);
 
         log.info("Product attribute created with ID: {}", attribute.getId());
@@ -44,6 +44,13 @@ public class ProductAttributeImplement implements IProductAttributeService {
         log.info("Updating product attribute ID: {}", id);
 
         ProductAttribute attribute = getAttributeById(id);
+
+        // If product ID is changing, verify new product exists
+        if (!attribute.getProductId().equals(productAttributeDTO.getProductId())) {
+            getProductById(productAttributeDTO.getProductId());
+            attribute.setProductId(productAttributeDTO.getProductId());
+        }
+
         attribute.setAttributeKey(productAttributeDTO.getAttributeKey());
         attribute.setAttributeValue(productAttributeDTO.getAttributeValue());
         attribute = productAttributeRepository.save(attribute);
@@ -55,7 +62,7 @@ public class ProductAttributeImplement implements IProductAttributeService {
     @Override
     public void deleteProductAttribute(Long id) {
         log.info("Deleting product attribute ID: {}", id);
-        getAttributeById(id); // Check tồn tại
+        getAttributeById(id); // Verify exists
         productAttributeRepository.deleteById(id);
         log.info("Product attribute deleted: ID {}", id);
     }
@@ -80,9 +87,6 @@ public class ProductAttributeImplement implements IProductAttributeService {
     public Page<ProductAttributeDTO> getAllProductAttributes(int page, int size) {
         return getProductAttributes(null, page, size);
     }
-
-
-    // Tách nhỏ logic
 
     private Product getProductById(Long id) {
         return productRepository.findById(id)

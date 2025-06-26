@@ -12,7 +12,6 @@ import org.example.demo.Repository.TransactionRepository;
 import org.example.demo.Repository.UserRepository;
 import org.example.demo.Repository.WalletRepository;
 import org.example.demo.Service.Interface.IWalletService;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -32,6 +31,10 @@ public class WalletServiceImplement implements IWalletService {
     private final UserRepository userRepository;
     private final WalletMapper walletMapper;
 
+    public Page<Transaction> getUserTransactions(Long userId, Pageable pageable) {
+        return transactionRepository.findTransactionsByUserId(userId, pageable);
+    }
+
     @Override
     public WalletDTO deposit(Long userId, BigDecimal amount, Long adminId) {
         log.info("Processing deposit: {} for userId: {} by adminId: {}", amount, userId, adminId);
@@ -43,15 +46,14 @@ public class WalletServiceImplement implements IWalletService {
         Wallet wallet = getWalletByUserId(userId);
         User admin = getAdminById(adminId);
 
-        // Cập nhật balance trước khi lưu giao dịch
         wallet.setBalance(wallet.getBalance().add(amount));
-        walletRepository.save(wallet); // Lưu luôn wallet trước khi tạo giao dịch
+        walletRepository.save(wallet);
 
         Transaction transaction = new Transaction();
-        transaction.setToWallet(wallet);
+        transaction.setToWalletId(wallet.getId());
         transaction.setAmount(amount);
         transaction.setTransactionType("deposit");
-        transaction.setAdmin(admin);
+        transaction.setAdminId(admin.getId());
         transaction.setCreatedAt(LocalDateTime.now());
 
         transactionRepository.save(transaction);
@@ -70,8 +72,7 @@ public class WalletServiceImplement implements IWalletService {
         }
 
         Transaction transaction = new Transaction();
-        transaction.setFromWallet(wallet);
-        transaction.setToWallet(null);
+        transaction.setFromWalletId(wallet.getId());
         transaction.setAmount(amount);
         transaction.setTransactionType("deduct_balance_on_order");
         transaction.setCreatedAt(LocalDateTime.now());
@@ -88,12 +89,12 @@ public class WalletServiceImplement implements IWalletService {
             throw new UserFriendlyException("Không tìm thấy tài khoản admin nào");
         }
 
-        User admin = admins.get(0); // hoặc kiểm tra thêm quyền cụ thể
+        User admin = admins.get(0);
         Wallet adminWallet = walletRepository.findByUserId(admin.getId())
                 .orElseThrow(() -> new UserFriendlyException("Ví admin không tồn tại"));
 
         Transaction transaction = new Transaction();
-        transaction.setToWallet(adminWallet);
+        transaction.setToWalletId(adminWallet.getId());
         transaction.setAmount(amount);
         transaction.setTransactionType("credit_admin_on_payment");
         transaction.setCreatedAt(LocalDateTime.now());
@@ -108,7 +109,7 @@ public class WalletServiceImplement implements IWalletService {
         Wallet printerWallet = getWalletByUserId(printerHouseId);
 
         Transaction transaction = new Transaction();
-        transaction.setToWallet(printerWallet);
+        transaction.setToWalletId(printerWallet.getId());
         transaction.setAmount(amount);
         transaction.setTransactionType("credit_printhouse_on_shipping");
         transaction.setCreatedAt(LocalDateTime.now());
@@ -123,7 +124,7 @@ public class WalletServiceImplement implements IWalletService {
         Wallet wallet = getWalletByUserId(userId);
 
         Transaction transaction = new Transaction();
-        transaction.setToWallet(wallet);
+        transaction.setToWalletId(wallet.getId());
         transaction.setAmount(amount);
         transaction.setTransactionType("refund_money_on_cancelled_order");
         transaction.setCreatedAt(LocalDateTime.now());
@@ -144,8 +145,6 @@ public class WalletServiceImplement implements IWalletService {
         Page<Wallet> wallets = walletRepository.findAll(pageable);
         return wallets.map(walletMapper::toDTO);
     }
-
-    // Tách logic
 
     private Wallet getWalletByUserId(Long userId) {
         return walletRepository.findByUserId(userId)

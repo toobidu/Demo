@@ -29,9 +29,9 @@ public class ProductPriceServiceImplement implements IProductPriceService {
         log.info("Creating product price - Product ID: {}, Rank: {}, Size: {}",
                 dto.getProductId(), dto.getRank(), dto.getSize());
 
-        Product product = getProductById(dto.getProductId());
+        getProductById(dto.getProductId()); // Verify product exists
         ProductPrice price = productPriceMapper.toEntity(dto);
-        price.setProduct(product);
+        price.setProductId(dto.getProductId());
 
         price = productPriceRepository.save(price);
         log.info("Product price created - ID: {}", price.getId());
@@ -44,9 +44,14 @@ public class ProductPriceServiceImplement implements IProductPriceService {
         log.info("Updating product price - ID: {}", id);
 
         ProductPrice price = getProductPriceById(id);
+        if (!price.getProductId().equals(dto.getProductId())) {
+            getProductById(dto.getProductId()); // Verify new product exists
+            price.setProductId(dto.getProductId());
+        }
         price.setRank(dto.getRank());
         price.setSize(dto.getSize());
         price.setPrice(dto.getPrice());
+        price.setBase(dto.isBase());
 
         price = productPriceRepository.save(price);
         log.info("Product price updated - ID: {}", id);
@@ -70,9 +75,11 @@ public class ProductPriceServiceImplement implements IProductPriceService {
 
     @Override
     public Page<ProductPriceDTO> getProductPrices(Long productId, String rank, int page, int size) {
-        log.info("Retrieving product prices - Product ID: {}, Rank: {}, page: {}, size: {}", productId, rank, page, size);
+        log.info("Retrieving product prices - Product ID: {}, Rank: {}, page: {}, size: {}",
+                productId, rank, page, size);
         Pageable pageable = PageRequest.of(page - 1, size);
         Page<ProductPrice> prices;
+
         if (productId != null && rank != null) {
             prices = productPriceRepository.findByProductIdAndRank(productId, rank, pageable);
         } else if (productId != null) {
@@ -80,6 +87,7 @@ public class ProductPriceServiceImplement implements IProductPriceService {
         } else {
             prices = productPriceRepository.findAll(pageable);
         }
+
         return prices.map(productPriceMapper::toDTO);
     }
 
@@ -87,9 +95,6 @@ public class ProductPriceServiceImplement implements IProductPriceService {
     public Page<ProductPriceDTO> getAllProductPrices(int page, int size) {
         return getProductPrices(null, null, page, size);
     }
-
-
-    // Tách nhỏ logic
 
     private Product getProductById(Long id) {
         return productRepository.findById(id)

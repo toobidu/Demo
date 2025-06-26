@@ -28,6 +28,7 @@ public class DictionaryItemServiceImplement implements IDictionaryItemService {
     public DictionaryItemDTO createDictionaryItem(DictionaryItemDTO dto) {
         log.info("Creating dictionary item for dictionaryId: {}", dto.getDictionaryId());
 
+        // Verify dictionary exists
         Dictionary dictionary = dictionaryRepository.findById(dto.getDictionaryId())
                 .orElseThrow(() -> {
                     log.error("Dictionary not found with ID: {}", dto.getDictionaryId());
@@ -35,7 +36,9 @@ public class DictionaryItemServiceImplement implements IDictionaryItemService {
                 });
 
         DictionaryItem item = dictionaryItemMapper.toEntity(dto);
-        item.setDictionary(dictionary);
+        item.setDictionaryId(dictionary.getId());
+        item.setCode(dto.getCode());
+        item.setName(dto.getName());
 
         DictionaryItem savedItem = dictionaryItemRepository.save(item);
         log.info("Dictionary item created with ID: {}", savedItem.getId());
@@ -52,6 +55,16 @@ public class DictionaryItemServiceImplement implements IDictionaryItemService {
                     log.error("Dictionary item not found with ID: {}", id);
                     return new UserFriendlyException("Dictionary item not found");
                 });
+
+        // If dictionary ID is changing, verify new dictionary exists
+        if (!item.getDictionaryId().equals(dto.getDictionaryId())) {
+            dictionaryRepository.findById(dto.getDictionaryId())
+                    .orElseThrow(() -> {
+                        log.error("Dictionary not found with ID: {}", dto.getDictionaryId());
+                        return new UserFriendlyException("Dictionary not found");
+                    });
+            item.setDictionaryId(dto.getDictionaryId());
+        }
 
         item.setCode(dto.getCode());
         item.setName(dto.getName());
@@ -93,7 +106,7 @@ public class DictionaryItemServiceImplement implements IDictionaryItemService {
         log.info("Retrieving dictionary items for dictionaryId: {} with paging", dictionaryId);
         Pageable pageable = PageRequest.of(page - 1, size);
         Page<DictionaryItem> items = (dictionaryId != null)
-                ? dictionaryItemRepository.findByDictionary_Id(dictionaryId, pageable)
+                ? dictionaryItemRepository.findByDictionaryId(dictionaryId, pageable)
                 : dictionaryItemRepository.findAll(pageable);
         return items.map(dictionaryItemMapper::toDTO);
     }

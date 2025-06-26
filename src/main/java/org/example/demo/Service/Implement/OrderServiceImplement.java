@@ -45,12 +45,12 @@ public class OrderServiceImplement implements IOrderService {
         User user = validateUser(orderDTO.getUserId());
         Wallet wallet = validateWallet(orderDTO.getUserId());
 
-        Order order = initNewOrder(user, wallet);
-        BigDecimal totalAmount = calculateAndSaveOrderItems(order, orderDTO.getOrderItems(), user);
+        Order order = initNewOrder(orderDTO.getUserId(), wallet.getId());
+        BigDecimal totalAmount = calculateAndSaveOrderItems(order.getId(), orderDTO.getOrderItems(), user);
         order.setTotalAmount(totalAmount);
         orderRepository.save(order);
 
-        validateWalletBalance(wallet, totalAmount, order);
+        validateWalletBalance(wallet, totalAmount);
         return toOrderDTOWithItems(order);
     }
 
@@ -64,19 +64,17 @@ public class OrderServiceImplement implements IOrderService {
         String currentStatus = order.getStatus();
         String newStatus = orderDTO.getStatus();
 
-        if (!isValidStatusTransition(currentStatus, newStatus)) {
+        if (isValidStatusTransition(currentStatus, newStatus)) {
             throw new UserFriendlyException("Invalid status transition");
         }
 
-        // Xử lý tài chính theo trạng thái mới
         if ("order".equals(newStatus)) {
-            deductBalanceFromSale(order); // Trừ tiền của Sale
-            creditAdmin(order);           // Cộng tiền cho Admin
+            deductBalanceFromSale(order.getUserId(), order.getTotalAmount());
+            creditAdmin(order.getTotalAmount());
         } else if ("shipping".equals(newStatus)) {
-            creditPrinthouse(order);      // Cộng tiền cho Nhà in
+            creditPrinthouse(order.getUserId(), order.getPrintPrice());
         }
 
-        // Cập nhật thông tin đơn hàng
         order.setStatus(newStatus);
         order.setUpdatedAt(LocalDateTime.now());
         if (orderDTO.getPrintPrice() != null) order.setPrintPrice(orderDTO.getPrintPrice());
@@ -96,15 +94,15 @@ public class OrderServiceImplement implements IOrderService {
 
         String currentStatus = order.getStatus();
 
-        if (!isValidStatusTransition(currentStatus, newStatus)) {
+        if (isValidStatusTransition(currentStatus, newStatus)) {
             throw new UserFriendlyException("Invalid status transition");
         }
 
         if ("order".equals(newStatus)) {
-            deductBalanceFromSale(order); // Trừ tiền của Sale
-            creditAdmin(order);           // Cộng tiền cho Admin
+            deductBalanceFromSale(order.getUserId(), order.getTotalAmount());
+            creditAdmin(order.getTotalAmount());
         } else if ("shipping".equals(newStatus)) {
-            creditPrinthouse(order);      // Cộng tiền cho Nhà in
+            creditPrinthouse(order.getUserId(), order.getPrintPrice());
         }
 
         order.setStatus(newStatus);
@@ -125,9 +123,8 @@ public class OrderServiceImplement implements IOrderService {
             throw new UserFriendlyException("Chỉ được hủy đơn ở trạng thái chờ thanh toán hoặc order");
         }
 
-        // Hoàn tiền nếu đã thanh toán
         if ("order".equals(order.getStatus())) {
-            walletService.refundOnCancel(order.getUser().getId(), order.getTotalAmount());
+            walletService.refundOnCancel(order.getUserId(), order.getTotalAmount());
         }
 
         order.setStatus("cancelled");
@@ -167,37 +164,21 @@ public class OrderServiceImplement implements IOrderService {
         return orders.map(this::toOrderDTOWithItems);
     }
 
-    //Các hàm xử lý tài chính
-    private void deductBalanceFromSale(Order order) {
-        Wallet wallet = order.getWallet();
-        BigDecimal amount = order.getTotalAmount();
-
-        if (wallet == null || wallet.getBalance().compareTo(amount) < 0) {
-            throw new UserFriendlyException("Số dư không đủ để thực hiện giao dịch");
-        }
-
-        walletService.deductBalance(wallet.getUser().getId(), amount);
+    private void deductBalanceFromSale(Long userId, BigDecimal amount) {
+        walletService.deductBalance(userId, amount);
     }
 
-    private void creditAdmin(Order order) {
-        BigDecimal amount = order.getTotalAmount();
+    private void creditAdmin(BigDecimal amount) {
         walletService.creditAdmin(amount);
     }
 
-    private void creditPrinthouse(Order order) {
-        BigDecimal amount = order.getPrintPrice();
-        walletService.creditPrinthouse(order.getUser().getId(), amount);
+    private void creditPrinthouse(Long userId, BigDecimal amount) {
+        walletService.creditPrinthouse(userId, amount);
     }
 
-    // --- Các hàm hỗ trợ ---
-
     private User validateUser(Long userId) {
-        User user = userRepository.findById(userId)
+        return userRepository.findById(userId)
                 .orElseThrow(() -> new UserFriendlyException("User not found"));
-        /*if (!"sale".equals(user.getTypeAccount())) {
-            throw new UserFriendlyException("Only sale users can create orders");
-        }*/
-        return user;
     }
 
     private Wallet validateWallet(Long userId) {
@@ -205,10 +186,10 @@ public class OrderServiceImplement implements IOrderService {
                 .orElseThrow(() -> new UserFriendlyException("Wallet not found"));
     }
 
-    private Order initNewOrder(User user, Wallet wallet) {
+    private Order initNewOrder(Long userId, Long walletId) {
         Order order = new Order();
-        order.setUser(user);
-        order.setWallet(wallet);
+        order.setUserId(userId);
+        order.setWalletId(walletId);
         order.setStatus("pending_payment");
         order.setTotalAmount(BigDecimal.ZERO);
         order.setPrintPrice(BigDecimal.ZERO);
@@ -219,7 +200,7 @@ public class OrderServiceImplement implements IOrderService {
         return orderRepository.save(order);
     }
 
-    private BigDecimal calculateAndSaveOrderItems(Order order, List<OrderItemDTO> items, User user) {
+    private BigDecimal calculateAndSaveOrderItems(Long orderId, List<OrderItemDTO> items, User user) {
         BigDecimal total = BigDecimal.ZERO;
         for (OrderItemDTO dto : items) {
             ProductPrice price = productPriceRepository.findById(dto.getProductPriceId())
@@ -230,9 +211,9 @@ public class OrderServiceImplement implements IOrderService {
             }
 
             OrderItem item = new OrderItem();
-            item.setOrder(order);
-            item.setProduct(price.getProduct());
-            item.setProductPrice(price);
+            item.setOrderId(orderId);
+            item.setProductId(price.getProductId());
+            item.setProductPriceId(price.getId());
             item.setQuantity(dto.getQuantity());
             item.setOriginalPrice(price.getPrice());
             orderItemRepository.save(item);
@@ -242,17 +223,16 @@ public class OrderServiceImplement implements IOrderService {
         return total;
     }
 
-    private void validateWalletBalance(Wallet wallet, BigDecimal required, Order order) {
+    private void validateWalletBalance(Wallet wallet, BigDecimal required) {
         if (wallet.getBalance().compareTo(required) < 0) {
-            order.setStatus("cancelled");
-            orderRepository.save(order);
             throw new UserFriendlyException("Số dư không đủ để tạo đơn");
         }
     }
 
     private OrderDTO toOrderDTOWithItems(Order order) {
         OrderDTO dto = orderMapper.toDTO(order);
-        dto.setOrderItems(mapOrderItems(orderItemRepository.findByOrderId(order.getId())));
+        Page<OrderItem> items = orderItemRepository.findByOrderId(order.getId(), PageRequest.of(0, Integer.MAX_VALUE));
+        dto.setOrderItems(mapOrderItems(items.getContent()));
         return dto;
     }
 
@@ -260,9 +240,9 @@ public class OrderServiceImplement implements IOrderService {
         return items.stream().map(item -> {
             OrderItemDTO dto = new OrderItemDTO();
             dto.setId(item.getId());
-            dto.setOrderId(item.getOrder().getId());
-            dto.setProductId(item.getProduct().getId());
-            dto.setProductPriceId(item.getProductPrice().getId());
+            dto.setOrderId(item.getOrderId());
+            dto.setProductId(item.getProductId());
+            dto.setProductPriceId(item.getProductPriceId());
             dto.setQuantity(item.getQuantity());
             dto.setOriginalPrice(item.getOriginalPrice());
             return dto;
@@ -271,11 +251,11 @@ public class OrderServiceImplement implements IOrderService {
 
     private boolean isValidStatusTransition(String current, String next) {
         switch (current) {
-            case "pending_payment": return next.equals("order") || next.equals("cancelled");
-            case "order": return next.equals("processing") || next.equals("cancelled");
-            case "processing": return next.equals("shipping");
-            case "shipping": return next.equals("done");
-            default: return false;
+            case "pending_payment": return !next.equals("order") && !next.equals("cancelled");
+            case "order": return !next.equals("processing") && !next.equals("cancelled");
+            case "processing": return !next.equals("shipping");
+            case "shipping": return !next.equals("done");
+            default: return true;
         }
     }
 }

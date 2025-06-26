@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.demo.Exception.UserFriendlyException;
 import org.example.demo.Mapper.RoleMapper;
+import org.example.demo.Modal.DTO.Users.PermissionDTO;
 import org.example.demo.Modal.DTO.Users.RoleDTO;
 import org.example.demo.Modal.Entity.Users.Role;
 import org.example.demo.Repository.RoleRepository;
@@ -11,6 +12,8 @@ import org.example.demo.Service.Interface.IRoleService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -72,5 +75,20 @@ public class RoleServiceImplement implements IRoleService {
     public List<RoleDTO> getAllRoles() {
         log.info("Retrieving all roles");
         return roleRepository.findAll().stream().map(roleMapper::toDTO).collect(Collectors.toList());
+    }
+
+    // Add the following method to RoleServiceImplement
+    @Override
+    public Map<Long, List<PermissionDTO>> getPermissionsByRoleIds(Set<Long> roleIds) {
+        log.info("Getting permissions for role IDs: {}", roleIds);
+        List<PermissionDTO> permissions = roleRepository.getPermissionsByRoleIds(roleIds);
+        return permissions.stream()
+                .collect(Collectors.groupingBy(
+                        PermissionDTO::getId,
+                        Collectors.mapping(
+                                permission -> permission,
+                                Collectors.toList()
+                        )
+                ));
     }
 }

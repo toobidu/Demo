@@ -5,6 +5,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.demo.Config.ApiResponse;
+import org.example.demo.Config.PermissionHelper;
 import org.example.demo.Exception.UserFriendlyException;
 import org.example.demo.Mapper.UserMapper;
 import org.example.demo.Modal.DTO.Authentication.LoginRequest;
@@ -45,6 +46,7 @@ public class AuthServiceImplement implements IAuthService {
     private final WalletRepository walletRepository;
     private final UserRoleRepository userRoleRepository;
     private final RoleRepository roleRepository;
+    private final PermissionHelper permissionHelper;
 
     @Override
     public ResponseEntity<ApiResponse<LoginResponse>> login(@Valid @RequestBody LoginRequest loginRequest) {
@@ -57,17 +59,14 @@ public class AuthServiceImplement implements IAuthService {
             return ResponseEntity.badRequest().body(ApiResponse.error("Thông tin đăng nhập không chính xác!"));
         }
 
-        //Lấy quyền từ DB và lưu vào Redis
         Set<String> permissions = getUserPermissions(user.getId());
         saveUserPermissionsToRedis(user.getId(), permissions);
 
         String accessToken = jwtUtil.generateAccessToken(user.getId(), user.getTypeAccount(), user.getRank());
         String refreshToken = jwtUtil.generateRefreshToken(user.getId());
 
-        //Lưu refresh token vào DB
         saveRefreshToken(user, refreshToken);
 
-        //Tạo response trả về client
         LoginResponse response = new LoginResponse();
         response.setAccessToken(accessToken);
         response.setRefreshToken(refreshToken);
@@ -80,7 +79,7 @@ public class AuthServiceImplement implements IAuthService {
         tokenRepository.findByUserId(user.getId()).ifPresent(tokenRepository::delete);
 
         Token token = new Token();
-        token.setUser(user);
+        token.setUserId(user.getId());
         token.setRefreshToken(refreshToken);
         token.setCreatedAt(LocalDateTime.now());
         token.setExpiresAt(LocalDateTime.now().plusSeconds(jwtUtil.getRefreshExpiration() / 1000));
@@ -107,7 +106,7 @@ public class AuthServiceImplement implements IAuthService {
         validateRegisterRequest(registerRequest);
 
         String encodedPassword = passwordEncoder.encode(registerRequest.getPassword());
-        User user = userMapper.toRegister(registerRequest);
+        User user = userMapper.toEntity(registerRequest);
         user.setPasswordHash(encodedPassword);
         user.setTypeAccount(registerRequest.getTypeAccount());
         user.setRank("BRONZE");
@@ -115,11 +114,11 @@ public class AuthServiceImplement implements IAuthService {
         user.setUpdatedAt(LocalDateTime.now());
 
         user = userRepository.save(user);
-        createWalletIfNotExists(user);
+        createWallet(user);
         assignRoleBasedOnTypeAccount(user);
 
         log.info("Registered user: {}", user.getUsername());
-        return ResponseEntity.ok(ApiResponse.success("Đăng kí thành công!", userMapper.toDTO(user)));
+        return ResponseEntity.ok(ApiResponse.success("Đăng kí thành công!", userMapper.toDTO(user, permissionHelper)));
     }
 
     private void validateRegisterRequest(RegisterRequest registerRequest) {
@@ -144,16 +143,14 @@ public class AuthServiceImplement implements IAuthService {
         }
     }
 
-    private void createWalletIfNotExists(User user) {
-        if (!walletRepository.existsByUserId(user.getId())) {
-            Wallet wallet = new Wallet();
-            wallet.setUser(user);
-            wallet.setBalance(BigDecimal.ZERO);
-            wallet.setCreatedAt(LocalDateTime.now());
-            wallet.setUpdatedAt(LocalDateTime.now());
-            walletRepository.save(wallet);
-            log.info("Created wallet for user ID: {}", user.getId());
-        }
+    private void createWallet(User user) {
+        Wallet wallet = new Wallet();
+        wallet.setUserId(user.getId());
+        wallet.setBalance(BigDecimal.ZERO);
+        wallet.setCreatedAt(LocalDateTime.now());
+        wallet.setUpdatedAt(LocalDateTime.now());
+        walletRepository.save(wallet);
+        log.info("Created wallet for user ID: {}", user.getId());
     }
 
     private void assignRoleBasedOnTypeAccount(User user) {
@@ -172,8 +169,6 @@ public class AuthServiceImplement implements IAuthService {
         userRoleId.setUserId(user.getId());
         userRoleId.setRoleId(role.getId());
         userRole.setId(userRoleId);
-        userRole.setUser(user);
-        userRole.setRole(role);
         userRoleRepository.save(userRole);
         log.info("Assigned role {} to user ID: {}", roleName, user.getId());
     }
@@ -198,14 +193,11 @@ public class AuthServiceImplement implements IAuthService {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.error("Refresh token đã hết hạn"));
         }
 
-        User user = tokenEntity.getUser();
-        if (user == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.error("Không tìm thấy người dùng"));
-        }
+        User user = userRepository.findById(tokenEntity.getUserId())
+                .orElseThrow(() -> new UserFriendlyException("Không tìm thấy người dùng"));
 
-        //Lấy quyền mới nhất từ DB và tạo token mới
         Set<String> permissions = getUserPermissions(userId);
-        saveUserPermissionsToRedis(userId, permissions); // Cập nhật Redis nếu cần
+        saveUserPermissionsToRedis(userId, permissions);
 
         String newAccessToken = jwtUtil.generateAccessToken(userId, user.getTypeAccount(), user.getRank());
         String newRefreshToken = jwtUtil.generateRefreshToken(userId);

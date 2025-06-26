@@ -2,6 +2,7 @@ package org.example.demo.Service.Implement;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.demo.Config.PermissionHelper;
 import org.example.demo.Exception.UserFriendlyException;
 import org.example.demo.Mapper.UserMapper;
 import org.example.demo.Modal.DTO.Users.UserDTO;
@@ -35,6 +36,7 @@ public class UserServiceImplement implements IUserService {
     private final WalletRepository walletRepository;
     private final RoleRepository roleRepository;
     private final UserRoleRepository userRoleRepository;
+    private final PermissionHelper permissionHelper;
 
     @Override
     public UserDTO createUser(UserDTO userDTO) {
@@ -54,7 +56,7 @@ public class UserServiceImplement implements IUserService {
         log.info("Đã gán role cho user ID: {}", user.getId());
 
         log.info("User created with ID: {}", user.getId());
-        return userMapper.toDTO(user);
+        return userMapper.toDTO(user, permissionHelper);
     }
 
     @Override
@@ -65,7 +67,7 @@ public class UserServiceImplement implements IUserService {
         user.setUpdatedAt(LocalDateTime.now());
         user = userRepository.save(user);
         log.info("User updated: ID {}", id);
-        return userMapper.toDTO(user);
+        return userMapper.toDTO(user, permissionHelper);
     }
 
     @Override
@@ -80,7 +82,7 @@ public class UserServiceImplement implements IUserService {
     public UserDTO getUser(Long id) {
         log.info("Retrieving user ID: {}", id);
         User user = findUserById(id);
-        return userMapper.toDTO(user);
+        return userMapper.toDTO(user, permissionHelper);
     }
 
     @Override
@@ -88,7 +90,7 @@ public class UserServiceImplement implements IUserService {
     public List<UserDTO> getAllUsers(String typeAccount, String rank) {
         return userRepository.findAllWithFilters(typeAccount, rank)
                 .stream()
-                .map(userMapper::toDTO)
+                .map(user -> userMapper.toDTO(user, permissionHelper))
                 .collect(Collectors.toList());
     }
     // Helper methods
@@ -160,7 +162,6 @@ public class UserServiceImplement implements IUserService {
     }
 
 
-
     private void assignRoleBasedOnTypeAccount(User user) {
         try {
             String typeAccount = user.getTypeAccount();
@@ -186,10 +187,7 @@ public class UserServiceImplement implements IUserService {
             userRoleId.setUserId(user.getId());
             userRoleId.setRoleId(role.getId());
             userRole.setId(userRoleId);
-            userRole.setUser(user);
-            userRole.setRole(role);
 
-            // Lưu vào database
             userRoleRepository.save(userRole);
             log.info("Đã gán role {} cho user ID: {}", roleName, user.getId());
         } catch (Exception e) {
