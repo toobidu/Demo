@@ -117,7 +117,7 @@ public class UserServiceImplement implements IUserService {
 
     private void createWalletForUser(User user) {
         Wallet wallet = new Wallet();
-        wallet.setUser(user);
+        wallet.setUserId(user.getId());
         wallet.setBalance(BigDecimal.ZERO);
         wallet.setCreatedAt(LocalDateTime.now());
         wallet.setUpdatedAt(LocalDateTime.now());

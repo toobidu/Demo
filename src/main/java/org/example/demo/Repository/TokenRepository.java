@@ -23,7 +23,7 @@ public interface TokenRepository extends JpaRepository<Token, Long> {
     // Method để xóa token theo userId
     @Modifying
     @Transactional
-    @Query("DELETE FROM Token t WHERE t.user.id = :userId")
+    @Query("DELETE FROM Token t WHERE t.userId = :userId")
     void deleteByUserId(@Param("userId") Long userId);
 
     // Method để xóa token đã hết hạn
@@ -37,6 +37,6 @@ public interface TokenRepository extends JpaRepository<Token, Long> {
     boolean existsByRefreshTokenAndNotExpired(@Param("refreshToken") String refreshToken, @Param("now") LocalDateTime now);
 
     // Method để lấy tất cả token chưa hết hạn của user
-    @Query("SELECT t FROM Token t WHERE t.user.id = :userId AND t.expiresAt > :now")
+    @Query("SELECT t FROM Token t WHERE t.userId = :userId AND t.expiresAt > :now")
     List<Token> findValidTokensByUserId(@Param("userId") Long userId, @Param("now") LocalDateTime now);
 }

@@ -11,7 +11,7 @@ import org.springframework.stereotype.Repository;
 public interface OrderRepository extends JpaRepository<Order, Long> {
     Page<Order> findByUserId(Long userId, Pageable pageable);
 
-    @Query("SELECT o FROM Order o JOIN User u ON o.user.id = u.id WHERE o.status != 'cancelled' OR u.typeAccount != 'sale'")
+    @Query("SELECT o FROM Order o JOIN User u ON o.userId = u.id WHERE o.status != 'cancelled' OR u.typeAccount != 'sale'")
     Page<Order> findAllOrdersForAdmin(Pageable pageable);
 
     @Query("SELECT o FROM Order o WHERE o.status IN ('order', 'processing', 'shipping', 'done')")

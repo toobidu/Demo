@@ -7,9 +7,7 @@ import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface ProductAttributeMapper {
-    @Mapping(source = "product.id", target = "productId")
     ProductAttributeDTO toDTO(ProductAttribute entity);
 
-    @Mapping(source = "productId", target = "product.id")
     ProductAttribute toEntity(ProductAttributeDTO dto);
 }
