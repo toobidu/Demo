@@ -1,24 +1,11 @@
 package org.example.demo.Modal.Entity.Users;
 
 import jakarta.persistence.*;
-<<<<<<< HEAD
 import lombok.*;
-=======
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
->>>>>>> restore-before-force
-import org.example.demo.Modal.Entity.Authentication.Token;
-import org.example.demo.Modal.Entity.Finance.Wallet;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
 
 @Entity
 @Table(name = "users")
@@ -26,16 +13,10 @@ import java.util.Set;
 @AllArgsConstructor
 @Getter
 @Setter
-<<<<<<< HEAD
 @EqualsAndHashCode
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-=======
-public class User {
-    @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
->>>>>>> restore-before-force
     @Column(name = "id")
     private Long id;
 
@@ -73,26 +54,4 @@ public class User {
     @Column(name = "updated_at")
     @UpdateTimestamp
     private LocalDateTime updatedAt;
-<<<<<<< HEAD
-=======
-
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<UserRole> userRoles = new HashSet<>();
-
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Token> tokens;
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof User)) return false;
-        User that = (User) o;
-        return id != null && Objects.equals(id, that.id);
-    }
-
-    @Override
-    public int hashCode() {
-        return id != null ? id.hashCode() : 0;
-    }
->>>>>>> restore-before-force
 }
