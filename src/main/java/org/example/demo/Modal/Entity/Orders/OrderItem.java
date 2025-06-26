@@ -16,26 +16,22 @@ import java.math.BigDecimal;
 @Data
 public class OrderItem {
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "order_id")
-    private Order order;
+    @Column(name = "order_id")
+    private Long orderId;
 
-    @ManyToOne
-    @JoinColumn(name = "product_id")
-    private Product product;
+    @Column(name = "product_id")
+    private Long productId;
 
-    @ManyToOne
-    @JoinColumn(name = "product_price_id")
-    private ProductPrice productPrice;
+    @Column(name = "product_price_id")
+    private Long productPriceId;
 
     @Column(name = "quantity")
     private Integer quantity;
 
     @Column(name = "original_price", columnDefinition = "NUMERIC(18,2)")
     private BigDecimal originalPrice;
-
 }
